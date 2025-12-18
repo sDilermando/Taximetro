@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Taxímetro Pro 7.0</title>
+    <title>Taxímetro Pro 7.1</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
@@ -21,76 +21,75 @@
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        /* TRAVAMENTO TOTAL DA TELA */
         html, body {
             margin: 0; padding: 0;
             width: 100%; height: 100%;
             background-color: var(--dark-bg);
             font-family: 'Montserrat', sans-serif;
-            overflow: hidden; /* Remove barra de rolagem */
-            touch-action: none; /* Bloqueia gestos de arrastar do navegador */
+            overflow: hidden;
+            touch-action: none;
             display: flex; flex-direction: column;
             color: white;
-            position: fixed; /* Trava no iOS */
+            position: fixed;
         }
 
-        /* --- 1. TOPO (HEADER) --- */
+        /* --- 1. TOPO MAIS COMPACTO --- */
         .top-header {
-            flex: 0 0 50px; /* Altura fixa */
+            flex: 0 0 45px; /* Altura reduzida */
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 20px;
-            background: rgba(10, 10, 10, 0.95);
+            padding: 0 15px;
+            background: rgba(10, 10, 10, 0.98);
             border-bottom: 1px solid #222;
             z-index: 20;
         }
 
-        .header-left { font-size: 0.75rem; color: #aaa; font-weight: bold; width: 80px; }
+        .header-left { font-size: 0.7rem; color: #aaa; font-weight: bold; width: 70px; }
         .header-center { 
             flex: 1; text-align: center; 
             font-family: 'Orbitron', sans-serif; font-weight: 900; 
-            color: var(--gold); letter-spacing: 1px; font-size: 0.9rem;
+            color: var(--gold); letter-spacing: 1px; font-size: 0.85rem;
         }
-        .header-right { width: 80px; } /* Espaço vazio para equilibrar */
+        .header-right { width: 70px; } 
 
-        /* --- 2. BARRA DE BOTÕES (TOOLBAR) --- */
+        /* --- 2. BARRA DE BOTÕES (MENOR) --- */
         .toolbar-container {
-            flex: 0 0 70px; /* Altura fixa para os botões */
+            flex: 0 0 55px; /* Altura reduzida para subir o quadro */
             display: flex; align-items: center; justify-content: center;
-            gap: 15px;
+            gap: 12px; /* Espaço menor entre botões */
             background: transparent;
             z-index: 20;
         }
 
         .tool-btn {
-            width: 45px; height: 45px;
+            width: 38px; height: 38px; /* Botões menores */
             background: #1a1a1a; border: 1px solid #333;
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex; justify-content: center; align-items: center;
             cursor: pointer; fill: #ccc;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             transition: transform 0.1s;
         }
-        .tool-btn svg { width: 22px; height: 22px; }
+        .tool-btn svg { width: 18px; height: 18px; }
         .tool-btn:active { transform: scale(0.9); background: var(--gold); border-color: var(--gold); fill: #000; }
         .tool-btn.whatsapp { fill: var(--success); border-color: #1a4d2e; }
-        .tool-btn.admin { fill: #ff4444; border-color: #4d1a1a; }
 
-        /* --- 3. CONTEÚDO PRINCIPAL (CARD) --- */
+        /* --- 3. CONTEÚDO PRINCIPAL --- */
         .main-content {
-            flex: 1; /* Ocupa todo o resto da tela */
-            display: flex; justify-content: center; align-items: center;
-            padding: 20px;
+            flex: 1; 
+            display: flex; justify-content: center; align-items: flex-start; /* Alinha mais pro topo */
+            padding: 10px 20px; /* Menos padding */
             position: relative;
         }
 
         .main-card {
-            width: 100%; max-width: 380px;
+            width: 100%; max-width: 340px;
             background: var(--panel-bg);
-            border: 2px solid #333; border-radius: 30px;
-            padding: 20px; text-align: center;
+            border: 2px solid #333; border-radius: 25px;
+            padding: 15px; /* Padding interno menor */
+            text-align: center;
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; justify-content: space-between;
-            min-height: 380px; /* Garante tamanho bom */
+            margin-top: 10px; /* Pequeno espaço do topo */
         }
         
         .main-card.flag1 { border-color: var(--gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.1); }
@@ -99,63 +98,57 @@
         .status-tag {
             align-self: center;
             background: #000; color: #666;
-            padding: 5px 15px; border-radius: 20px; font-size: 0.75rem;
+            padding: 4px 12px; border-radius: 15px; font-size: 0.65rem;
             text-transform: uppercase; font-weight: bold; border: 1px solid #333;
+            margin-bottom: 5px;
         }
         .status-tag.running { color: var(--success); border-color: var(--success); }
         .status-tag.paused { color: var(--warning); border-color: var(--warning); }
 
         /* Chave Bandeira */
         .flag-switch { 
-            display: flex; background: #222; border-radius: 20px; padding: 3px; 
-            margin: 10px auto; width: fit-content; border: 1px solid #444; position: relative;
+            display: flex; background: #222; border-radius: 20px; padding: 2px; 
+            margin: 5px auto; width: fit-content; border: 1px solid #444; position: relative;
         }
-        .flag-option { padding: 6px 15px; font-size: 0.75rem; font-weight: bold; color: #666; z-index: 2; transition: 0.3s; }
+        .flag-option { padding: 5px 12px; font-size: 0.7rem; font-weight: bold; color: #666; z-index: 2; transition: 0.3s; }
         .flag-option.active { color: #000; }
-        .switch-bg { position: absolute; top: 3px; left: 3px; width: 50%; height: calc(100% - 6px); border-radius: 17px; transition: 0.3s; z-index: 1; }
-        .flag-switch[data-state="1"] .switch-bg { left: 3px; background: var(--gold); }
+        .switch-bg { position: absolute; top: 2px; left: 2px; width: 50%; height: calc(100% - 4px); border-radius: 17px; transition: 0.3s; z-index: 1; }
+        .flag-switch[data-state="1"] .switch-bg { left: 2px; background: var(--gold); }
         .flag-switch[data-state="2"] .switch-bg { left: 50%; background: var(--flag2-color); }
-        .auto-badge { font-size: 0.6rem; color: var(--success); text-align: center; height: 15px; }
+        .auto-badge { font-size: 0.55rem; color: var(--success); text-align: center; height: 12px; margin-bottom: 5px;}
 
         /* Display Valores */
         .big-price {
-            font-family: 'Orbitron', sans-serif; font-size: 4rem; font-weight: 700;
-            color: white; margin: 5px 0; line-height: 1;
+            font-family: 'Orbitron', sans-serif; font-size: 3.5rem; /* Levemente menor */
+            font-weight: 700; color: white; margin: 5px 0; line-height: 1;
         }
         .main-card.flag1 .big-price { color: var(--gold); }
         .main-card.flag2 .big-price { color: var(--flag2-color); }
-        .currency { font-size: 1.5rem; vertical-align: super; color: #888; }
+        .currency { font-size: 1.2rem; vertical-align: super; color: #888; }
 
-        .stats-row { display: flex; justify-content: space-around; margin: 15px 0; padding-top: 15px; border-top: 1px solid #222; }
-        .stat-val { font-family: 'Orbitron'; font-size: 1.2rem; font-weight: bold; }
-        .stat-lbl { font-size: 0.65rem; color: #666; text-transform: uppercase; margin-top: 3px; }
+        .stats-row { display: flex; justify-content: space-around; margin: 10px 0; padding-top: 10px; border-top: 1px solid #222; }
+        .stat-val { font-family: 'Orbitron'; font-size: 1.1rem; font-weight: bold; }
+        .stat-lbl { font-size: 0.55rem; color: #666; text-transform: uppercase; margin-top: 2px; }
 
-        .controls-row { display: flex; gap: 10px; margin-top: auto; }
-        .btn-main { background: linear-gradient(135deg, #FFD700, #FDB931); color: black; border: none; padding: 18px 0; border-radius: 15px; font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 800; text-transform: uppercase; flex-grow: 1; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2); }
+        .controls-row { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-main { background: linear-gradient(135deg, #FFD700, #FDB931); color: black; border: none; padding: 15px 0; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 800; text-transform: uppercase; flex-grow: 1; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2); }
         .btn-main.stop { background: linear-gradient(135deg, #ff4444, #cc0000); color: white; box-shadow: 0 4px 15px rgba(255, 68, 68, 0.2); }
-        .btn-pause { width: 54px; border-radius: 15px; background: #222; border: 1px solid #333; color: white; font-size: 1.2rem; display: none; justify-content: center; align-items: center; }
+        .btn-pause { width: 50px; border-radius: 12px; background: #222; border: 1px solid #333; color: white; font-size: 1.1rem; display: none; justify-content: center; align-items: center; }
         .btn-pause.active { background: var(--warning); color: black; }
 
-        /* --- MAPA E MODAIS --- */
+        /* --- MODAIS --- */
         .overlay-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: 100; display: none; flex-direction: column; overflow-y: auto; touch-action: pan-y; }
         .overlay-screen.active { display: flex; }
-        
         .modal-header { padding: 15px; background: #222; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
         .modal-title { font-weight: bold; color: var(--gold); }
         .modal-close { background: #333; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; }
-        
         .modal-body { padding: 20px; flex: 1; text-align: center; }
-        
-        /* Estilos específicos do Mapa */
         .map-frame { flex: 1; position: relative; }
         #visibleMap { width: 100%; height: 100%; }
         .map-search-bar { padding: 10px; background: #222; display: flex; gap: 5px; }
         .input-bar { flex: 1; padding: 10px; border-radius: 5px; border: none; background: #333; color: white; }
-
         .btn-full { width: 100%; padding: 15px; background: var(--gold); border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; color: black; }
         .input-line { width: 100%; padding: 12px; margin: 8px 0; background: #333; border: 1px solid #444; color: white; border-radius: 8px; text-align: center; }
-
-        /* Tabs */
         .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #222; padding: 5px; border-radius: 10px; }
         .tab { flex: 1; padding: 10px; text-align: center; font-size: 0.8rem; border-radius: 8px; color: #888; }
         .tab.active { background: var(--gold); color: black; font-weight: bold; }
@@ -173,28 +166,30 @@
             <div id="clock">12:00</div>
             <div id="temp" style="font-weight:normal; opacity:0.7">26°C</div>
         </div>
-        <div class="header-center">TAXÍMETRO PRO</div>
-        <div class="header-right"></div> </div>
+        <div class="header-center">TAXÍMETRO VIRTUAL</div>
+        <div class="header-right"></div>
+    </div>
 
     <div class="toolbar-container">
-        <div class="tool-btn" onclick="openHistory()"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
-        <div class="tool-btn" onclick="openMapScreen()"><svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg></div>
-        <div class="tool-btn whatsapp" onclick="openWhatsApp()"><svg viewBox="0 0 24 24"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 19.98c-1.48 0-2.93-.4-4.21-1.15l-.3-.18-3.11.82.83-3.04-.19-.31c-.82-1.33-1.26-2.87-1.26-4.46 0-4.66 3.79-8.45 8.45-8.45 2.26 0 4.38.88 5.98 2.48 1.6 1.6 2.48 3.72 2.48 5.98 0 4.66-3.79 8.45-8.45 8.45h-.22z"/></svg></div>
-        <div class="tool-btn" onclick="openSettings()"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div>
-        <div class="tool-btn admin" onclick="openAdmin()"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg></div>
-    </div>
+        <div class="tool-btn" onclick="openHistory()" title="Relatório"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
+        <div class="tool-btn" onclick="openMapScreen()" title="Mapa"><svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg></div>
+        <div class="tool-btn whatsapp" onclick="openWhatsApp()" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 19.98c-1.48 0-2.93-.4-4.21-1.15l-.3-.18-3.11.82.83-3.04-.19-.31c-.82-1.33-1.26-2.87-1.26-4.46 0-4.66 3.79-8.45 8.45-8.45 2.26 0 4.38.88 5.98 2.48 1.6 1.6 2.48 3.72 2.48 5.98 0 4.66-3.79 8.45-8.45 8.45h-.22z"/></svg></div>
+        <div class="tool-btn" onclick="openSettings()" title="Config"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div>
+        </div>
 
     <div class="main-content">
         <div class="main-card flag1" id="mainCard">
             
             <div class="status-tag" id="statusTag">LIVRE</div>
 
-            <div class="flag-switch" id="flagSwitch" data-state="1" onclick="toggleFlagManual()">
-                <div class="switch-bg"></div>
-                <div class="flag-option active" id="opt1">BAND 1</div>
-                <div class="flag-option" id="opt2">BAND 2</div>
+            <div class="flag-switch-container">
+                <div class="flag-switch" id="flagSwitch" data-state="1" onclick="toggleFlagManual()">
+                    <div class="switch-bg"></div>
+                    <div class="flag-option active" id="opt1">BAND 1</div>
+                    <div class="flag-option" id="opt2">BAND 2</div>
+                </div>
+                <div class="auto-badge" id="autoBadge">AUTO ON</div>
             </div>
-            <div class="auto-badge" id="autoBadge">AUTO ON</div>
 
             <div class="big-price"><span class="currency">R$</span> <span id="mainPrice">0,00</span></div>
             
@@ -216,17 +211,12 @@
             <button class="tool-btn" style="background:var(--gold); border:none;" onclick="calculateEstimate()">IR</button>
             <button class="tool-btn" style="background:#333; color:white; border:none;" onclick="closeMapScreen()">✕</button>
         </div>
-        <div id="estimateBar" style="background:var(--gold); color:black; padding:10px; text-align:center; font-weight:bold; display:none;">
-            Estimativa: R$ 0,00
-        </div>
+        <div id="estimateBar" style="background:var(--gold); color:black; padding:10px; text-align:center; font-weight:bold; display:none;">Estimativa: R$ 0,00</div>
         <div class="map-frame"><div id="visibleMap"></div></div>
     </div>
 
     <div id="historyScreen" class="overlay-screen">
-        <div class="modal-header">
-            <span class="modal-title">HISTÓRICO</span>
-            <button class="modal-close" onclick="closeOverlay('historyScreen')">✕</button>
-        </div>
+        <div class="modal-header"><span class="modal-title">HISTÓRICO</span><button class="modal-close" onclick="closeOverlay('historyScreen')">✕</button></div>
         <div class="modal-body">
             <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:15px;">
                 <span style="color:#aaa; font-size:0.8rem;">TOTAL DO DIA</span>
@@ -238,17 +228,13 @@
     </div>
 
     <div id="configScreen" class="overlay-screen">
-        <div class="modal-header">
-            <span class="modal-title">CONFIGURAÇÕES</span>
-            <button class="modal-close" onclick="closeOverlay('configScreen')">✕</button>
-        </div>
+        <div class="modal-header"><span class="modal-title">CONFIGURAÇÕES</span><button class="modal-close" onclick="closeOverlay('configScreen')">✕</button></div>
         <div class="modal-body">
             <div class="tabs">
                 <div class="tab active" onclick="switchTab('tab1', this)">BAND 1</div>
                 <div class="tab" onclick="switchTab('tab2', this)">BAND 2</div>
                 <div class="tab" onclick="switchTab('tabAuto', this)">AUTO</div>
             </div>
-
             <div id="tab1" class="tab-content active">
                 <input type="number" id="basePrice1" class="input-line" placeholder="Bandeirada">
                 <input type="number" id="kmPrice1" class="input-line" placeholder="Preço KM">
@@ -265,6 +251,8 @@
                 <label>Fim (Hora)</label><input type="number" id="autoEnd" class="input-line" value="6">
             </div>
             <button class="btn-full" onclick="saveSettings()">SALVAR</button>
+            <div style="margin-top:30px; font-size:0.7rem; color:#666; border-top:1px solid #333; padding-top:10px;">ID do Motorista (Admin)</div>
+            <button class="btn-full" style="background:#222; color:#555; border:1px solid #333; margin-top:5px;" onclick="openAdmin()">EDITAR ID</button>
         </div>
     </div>
 
@@ -288,19 +276,24 @@
         </div>
     </div>
 
+    <div id="adminModal" class="overlay-screen" style="justify-content:center; align-items:center;">
+        <div style="background:#1a1a1a; padding:30px; border-radius:20px; width:80%; text-align:center;">
+            <h3 style="color:#ff4444;">ADMIN</h3>
+            <input type="password" id="adminPass" class="input-line" placeholder="Senha">
+            <button class="btn-full" onclick="checkAdmin()">ACESSAR</button>
+            <button class="btn-full" style="background:#333; color:white; margin-top:10px;" onclick="closeOverlay('adminModal')">CANCELAR</button>
+            <div id="adminPanel" style="display:none; margin-top:10px; color:#888;"></div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
     <script>
-        // --- DADOS ---
         let driverInfo = { name: '', id: '000' };
         let rideHistory = [];
         let currentFlag = 1; 
-        let config = {
-            f1: { base: 5.0, km: 2.5, hour: 24.0 },
-            f2: { base: 6.0, km: 3.0, hour: 30.0 },
-            auto: { active: false, start: 22, end: 6 }
-        };
+        let config = { f1: { base: 5.0, km: 2.5, hour: 24.0 }, f2: { base: 6.0, km: 3.0, hour: 30.0 }, auto: { active: false, start: 22, end: 6 } };
 
         function initApp() {
             const data = localStorage.getItem('sjdr_taxi_driver');
@@ -309,9 +302,7 @@
             if (hist) rideHistory = JSON.parse(hist);
             const cfg = localStorage.getItem('sjdr_taxi_config');
             if (cfg) config = JSON.parse(cfg);
-            
-            fillConfigInputs();
-            updateClock();
+            fillConfigInputs(); updateClock();
         }
 
         function fillConfigInputs() {
@@ -336,7 +327,6 @@
             closeOverlay('configScreen'); checkAutoFlag();
         }
 
-        // --- MAPA ---
         let mapVisible, routeControl;
         function initMaps() {
             mapVisible = L.map('visibleMap', {zoomControl: false}).setView([-21.135, -44.261], 15);
@@ -374,7 +364,6 @@
                 });
         }
 
-        // --- TAXÍMETRO ---
         let isRunning = false, isPaused = false;
         let watchId = null, intervalId = null;
         let totalDistance = 0, startTime = 0;
@@ -468,15 +457,23 @@
             rideHistory.push(ride); localStorage.setItem('sjdr_taxi_history', JSON.stringify(rideHistory));
         }
 
-        // --- TELAS ---
         function openHistory() {
             document.getElementById('historyScreen').classList.add('active');
             const l = document.getElementById('historyList'); l.innerHTML = ''; let t = 0;
             rideHistory.forEach(r => { t += r.val; l.innerHTML += `<div style="background:#222;padding:10px;margin-bottom:5px;display:flex;justify-content:space-between;border-left:3px solid gold;color:white;"><span>${r.date}</span><span>R$ ${r.val.toFixed(2).replace('.',',')}</span></div>`; });
             document.getElementById('dayTotal').innerText = "R$ " + t.toFixed(2).replace('.',',');
         }
+        
         function openSettings() { document.getElementById('configScreen').classList.add('active'); }
-        function openAdmin() { alert("ID do Motorista: " + driverInfo.id); }
+        function openAdmin() { document.getElementById('adminModal').classList.add('active'); document.getElementById('adminPass').value=''; document.getElementById('adminPanel').style.display='none'; }
+        
+        function checkAdmin() {
+            if(document.getElementById('adminPass').value==='1234') {
+                document.getElementById('adminPanel').style.display='block';
+                document.getElementById('adminPanel').innerHTML = `Motorista: <b style="color:white">${driverInfo.name}</b><br>ID: ${driverInfo.id}`;
+            } else alert('Senha errada');
+        }
+        
         function closeOverlay(id) { document.getElementById(id).classList.remove('active'); }
         function switchTab(id, el) { 
             document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); 
