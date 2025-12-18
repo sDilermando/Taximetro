@@ -3,407 +3,641 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Taxímetro Pro - Compact</title>
+    <title>Taxímetro Pro 5.1</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --gold: #FFD700;
-            --glass-bg: rgba(15, 15, 15, 0.92);
-            --danger: #ff4444;
+            --dark-bg: #000000;
+            --panel-bg: rgba(20, 20, 20, 0.95);
             --success: #25D366;
+            --warning: #ff9900;
+            --flag2-color: #00b7ff;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             margin: 0; padding: 0;
-            background-color: #000;
+            background-color: var(--dark-bg);
             font-family: 'Montserrat', sans-serif;
             width: 100vw; height: 100vh;
             overflow: hidden; position: relative;
+            color: white;
         }
 
-        #map { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 1; outline: none;
-        }
-
-        /* --- HEADER MAIS COMPACTO --- */
-        .premium-header {
+        /* --- HEADER --- */
+        .header-container {
             position: absolute; top: 0; left: 0; width: 100%;
-            padding: 10px 15px; 
-            display: flex; justify-content: space-between; align-items: flex-start;
-            z-index: 20; pointer-events: none;
+            background: rgba(0,0,0,0.95); border-bottom: 1px solid #333;
+            padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 50;
         }
-
-        .info-left {
-            pointer-events: auto;
-            background: var(--glass-bg); 
-            padding: 6px 12px;
-            border-radius: 8px; border-left: 3px solid var(--gold);
-            color: white; backdrop-filter: blur(5px);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        }
-        .driver-id-tag { font-size: 0.6rem; color: var(--gold); font-weight: bold; margin-bottom: 0; }
-        .gps-status { font-size: 0.6rem; color: var(--success); display: flex; align-items: center; gap: 4px; margin-top: 2px;}
-        .gps-dot { width: 5px; height: 5px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+        .header-left { display: flex; flex-direction: column; }
+        .app-title { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.85rem; color: var(--gold); letter-spacing: 1px; }
+        .app-info { font-size: 0.65rem; color: #aaa; margin-top: 2px; }
         
-        .fare-panel {
-            pointer-events: auto;
-            background: var(--glass-bg); 
-            padding: 8px 15px;
-            border-radius: 10px; text-align: right;
-            border-right: 3px solid var(--gold);
-            backdrop-filter: blur(5px); 
-            min-width: 100px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.5);
+        .toolbar { display: flex; gap: 8px; align-items: center; }
+        .tool-btn {
+            width: 36px; height: 36px; background: transparent; border: 1px solid #444;
+            border-radius: 8px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: 0.2s; fill: #ccc; position: relative;
         }
-        .fare-label { font-size: 0.6rem; color: #aaa; text-transform: uppercase; margin-bottom: 2px; }
-        .fare-value {
-            font-family: 'Orbitron', sans-serif; 
-            font-size: 1.5rem;
-            font-weight: 700; color: var(--gold);
-            text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); margin: 0; line-height: 1.1;
-        }
-        .mini-stats { font-size: 0.65rem; color: #ddd; font-family: 'Orbitron'; margin-top: 3px; }
+        .tool-btn svg { width: 18px; height: 18px; }
+        .tool-btn:active { background: var(--gold); border-color: var(--gold); fill: #000; }
+        
+        /* Botão Microfone Destaque */
+        .tool-btn.mic { border-color: var(--gold); fill: var(--gold); }
+        .tool-btn.mic.listening { background: #cc0000; border-color: #ff4444; fill: white; animation: pulse-red 1.5s infinite; }
+        
+        /* Botão Mute */
+        .tool-btn.muted { fill: #666; border-color: #333; }
+        .slash { position: absolute; width: 20px; height: 2px; background: #ff4444; transform: rotate(45deg); display: none; }
+        .tool-btn.muted .slash { display: block; }
 
-        /* --- BOTÕES LATERAIS MENORES --- */
-        .side-buttons {
-            position: absolute; 
-            bottom: 100px;
-            right: 10px;
-            display: flex; flex-direction: column; gap: 8px;
-            z-index: 30; pointer-events: auto;
-        }
+        /* Botão WhatsApp */
+        .tool-btn.whatsapp { border-color: #25D366; fill: #25D366; }
 
-        .icon-btn {
-            width: 38px; height: 38px;
-            background: var(--glass-bg); border: 1px solid var(--gold);
-            border-radius: 50%; color: var(--gold);
-            font-size: 1rem;
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer; backdrop-filter: blur(5px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        }
-        .icon-btn:active { transform: scale(0.9); background: #333; }
-        .map-layer-btn { border-color: #fff; color: #fff; }
-        .admin-btn { border-color: #ff4444; color: #ff4444; }
-
-        /* --- BOTÃO INICIAR --- */
-        .bottom-action-container {
-            position: absolute; 
-            bottom: 25px; left: 0; width: 100%;
-            display: flex; justify-content: center; 
-            z-index: 30; pointer-events: none;
-        }
-        .btn-premium {
-            pointer-events: auto;
-            background: linear-gradient(135deg, #FFD700, #FDB931);
-            color: #000; border: none; padding: 16px 45px;
-            border-radius: 50px; font-family: 'Montserrat', sans-serif;
-            font-size: 1.1rem; font-weight: 800; text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); cursor: pointer;
-            white-space: nowrap; user-select: none;
-        }
-        .btn-premium:active { transform: scale(0.95); }
-        .btn-premium.stop {
-            background: linear-gradient(135deg, #ff4444, #cc0000);
-            color: white; box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+        /* --- DASHBOARD --- */
+        .dashboard-container {
+            position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%);
+            width: 90%; max-width: 380px; z-index: 10;
         }
 
-        /* --- MODAIS --- */
-        .overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 1000;
-            display: none; justify-content: center; align-items: center;
-            backdrop-filter: blur(5px); padding: 15px;
+        .main-card {
+            background: var(--panel-bg);
+            border: 1px solid #333; border-radius: 25px;
+            padding: 25px 20px; text-align: center;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.05);
+            position: relative; overflow: hidden;
+            transition: border-color 0.3s;
         }
+        .main-card.flag1 { border-color: var(--gold); }
+        .main-card.flag1::before { content:''; position: absolute; top:0; left:0; width:100%; height:3px; background:var(--gold); box-shadow: 0 0 10px var(--gold); }
+        .main-card.flag2 { border-color: var(--flag2-color); }
+        .main-card.flag2::before { content:''; position: absolute; top:0; left:0; width:100%; height:3px; background:var(--flag2-color); box-shadow: 0 0 10px var(--flag2-color); }
+
+        .status-tag {
+            display: inline-block; background: #111; color: #666;
+            padding: 4px 12px; border-radius: 15px; font-size: 0.75rem;
+            text-transform: uppercase; font-weight: bold; margin-bottom: 10px;
+            border: 1px solid #333;
+        }
+        .status-tag.running { color: var(--success); border-color: var(--success); background: rgba(37, 211, 102, 0.1); }
+        .status-tag.paused { color: var(--warning); border-color: var(--warning); animation: pulse 1s infinite; }
+
+        /* SWITCH BANDEIRA */
+        .flag-switch-container { display: flex; justify-content: center; margin-bottom: 5px; }
+        .flag-switch { background: #222; border-radius: 20px; padding: 3px; display: flex; border: 1px solid #444; position: relative; }
+        .flag-option { padding: 5px 15px; font-size: 0.7rem; font-weight: bold; color: #666; cursor: pointer; z-index: 2; transition: 0.3s; }
+        .flag-option.active { color: #000; }
+        .switch-bg { position: absolute; top: 3px; left: 3px; width: 50%; height: calc(100% - 6px); border-radius: 17px; transition: 0.3s; z-index: 1; }
+        .flag-switch[data-state="1"] .switch-bg { left: 3px; background: var(--gold); }
+        .flag-switch[data-state="2"] .switch-bg { left: 50%; background: var(--flag2-color); }
+        .auto-badge { font-size: 0.6rem; color: var(--success); margin-left: 5px; display: none; align-items: center;}
+
+        .big-price {
+            font-family: 'Orbitron', sans-serif; font-size: 3.8rem; font-weight: 700;
+            color: white; margin: 5px 0; line-height: 1;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .main-card.flag1 .big-price { color: var(--gold); text-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+        .main-card.flag2 .big-price { color: var(--flag2-color); text-shadow: 0 0 20px rgba(0, 183, 255, 0.2); }
+        .currency-symbol { font-size: 1.5rem; vertical-align: super; color: #fff; opacity: 0.5; }
+
+        .stats-row { display: flex; justify-content: center; gap: 30px; margin: 20px 0 30px 0; padding-top: 15px; border-top: 1px solid #333; }
+        .stat-item { display: flex; flex-direction: column; }
+        .stat-val { font-family: 'Orbitron'; font-size: 1.2rem; color: white; font-weight: bold; }
+        .stat-lbl { font-size: 0.65rem; color: #666; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .controls-row { display: flex; gap: 10px; }
+        .btn-main { background: linear-gradient(135deg, #FFD700, #FDB931); color: black; border: none; padding: 18px 0; border-radius: 15px; font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 800; text-transform: uppercase; cursor: pointer; flex-grow: 1; box-shadow: 0 5px 20px rgba(255, 215, 0, 0.15); transition: 0.2s; }
+        .btn-main.stop { background: linear-gradient(135deg, #ff4444, #cc0000); color: white; box-shadow: 0 5px 20px rgba(255, 68, 68, 0.2); }
+        .btn-pause { width: 54px; border-radius: 15px; background: #222; border: 1px solid #333; color: white; font-size: 1.2rem; display: none; justify-content: center; align-items: center; cursor: pointer; }
+        .btn-pause.active { background: var(--warning); color: black; border-color: var(--warning); }
+
+        /* --- MAPA TELA CHEIA --- */
+        .map-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 60; display: none; flex-direction: column;
+        }
+        .map-screen.active { display: flex; }
+        .map-controls-bar { padding: 15px; background: white; border-bottom: 1px solid #ddd; display: flex; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .input-light { flex-grow: 1; padding: 12px; background: #f5f5f5; border: 1px solid #ddd; color: #333; border-radius: 8px; }
+        .map-frame { flex-grow: 1; width: 100%; height: 100%; position: relative; background: #eee; }
+        #visibleMap { width: 100%; height: 100%; }
+        
+        .estimate-card { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 1000; display: none; color: #333; font-weight: bold; border: 2px solid var(--gold); white-space: nowrap;}
+
+        /* MODAIS */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; display: none; justify-content: center; align-items: center; padding: 20px; }
         .overlay.active { display: flex; }
+        .modal-box { background: #151515; border: 1px solid #333; padding: 20px; border-radius: 20px; width: 100%; max-width: 320px; text-align: center; max-height: 90vh; overflow-y: auto; position: relative; }
+        .close-btn { position: absolute; top: 15px; right: 15px; color: #666; font-size: 1.5rem; cursor: pointer; line-height: 1; }
+        .btn-full { width: 100%; padding: 15px; background: var(--gold); border: none; border-radius: 10px; font-weight: 800; cursor: pointer; color: black; margin-top: 15px; }
+        .input-dark { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #333; color: white; border-radius: 8px; text-align: center; }
 
-        .modal-box {
-            background: #1a1a1a; border: 1px solid var(--gold);
-            padding: 20px; border-radius: 15px; width: 100%; max-width: 320px;
-            color: white; text-align: center; position: relative; max-height: 85vh; overflow-y: auto;
-        }
-        .input-dark {
-            width: 100%; padding: 10px; margin: 6px 0;
-            background: #333; border: 1px solid #444; border-radius: 8px;
-            color: white; text-align: center; font-size: 0.9rem;
-        }
-        .btn-full {
-            width: 100%; padding: 12px; margin-top: 10px;
-            background: var(--gold); border: none; border-radius: 8px;
-            font-weight: 800; font-size: 0.9rem; cursor: pointer; color: black;
-        }
-        
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.75rem; }
-        .admin-table th { text-align: left; color: var(--gold); border-bottom: 1px solid #555; padding: 5px; }
-        .admin-table td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #333; }
-        .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
-        
-        .receipt-total strong { font-size: 2rem; color: var(--gold); display: block; font-family: 'Orbitron'; }
-        
-        .chat-area {
-            height: 220px; background: #222; border-radius: 10px; margin-bottom: 10px;
-            display: flex; flex-direction: column; text-align: left; overflow: hidden;
-        }
-        .chat-messages { flex-grow: 1; padding: 10px; overflow-y: auto; font-size: 0.8rem; color: #ccc; }
-        .chat-input-area { display: flex; border-top: 1px solid #444; }
-        .chat-input-area input { flex-grow: 1; background: #111; border: none; padding: 12px; color: white; font-size: 0.9rem; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .tab { flex: 1; padding: 8px; font-size: 0.7rem; background: #222; color: #888; border-radius: 5px; cursor: pointer; }
+        .tab.active { background: var(--gold); color: black; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .checkbox-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 15px 0; color: #ccc; font-size: 0.9rem; }
 
-        .car-icon-container {
-            width: 50px; height: 50px; display: flex; justify-content: center; align-items: center;
-            margin-top: -25px; margin-left: -25px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.9));
-        }
-        .moving .car-wheel { animation: spin 0.5s linear infinite; transform-box: fill-box; transform-origin: center; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        /* Overlay de Voz */
+        .voice-overlay { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 30px; border-radius: 30px; border: 1px solid var(--gold); display: none; z-index: 200; backdrop-filter: blur(5px); }
+
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); } }
 
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
+    <div id="map" style="display:none;"></div>
+    
+    <div id="voiceFeedback" class="voice-overlay">🎤 Ouvindo...</div>
 
-    <div class="premium-header">
-        <div class="info-left">
-            <div class="driver-id-tag" id="displayDriverId">MOT. ---</div>
-            <div class="gps-status" id="gpsStatus"><div class="gps-dot"></div> <span id="gpsText">Buscando...</span></div>
+    <div class="header-container">
+        <div class="header-left">
+            <div class="app-title">TAXÍMETRO PRO</div>
+            <div class="app-info"><span id="clock">--:--</span> • <span id="temp">26°C</span></div>
         </div>
-        <div class="fare-panel">
-            <div class="fare-label" id="fareLabel">Status</div>
-            <div class="fare-value" id="totalPrice">R$ 0,00</div>
-            <div class="mini-stats">
-                <span id="distDisplay">0.0 km</span> • <span id="timeDisplay">00:00</span>
+        <div class="toolbar">
+            
+            <div class="tool-btn mic" id="micBtn" onclick="toggleVoice()" title="Comando de Voz">
+                <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+            </div>
+
+            <div class="tool-btn" id="muteBtn" onclick="toggleMute()" title="Silenciar Voz">
+                <div class="slash"></div>
+                <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </div>
+
+            <div class="tool-btn" onclick="openHistory()" title="Histórico"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
+            <div class="tool-btn" onclick="openMapScreen()" title="Mapa"><svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg></div>
+            <div class="tool-btn whatsapp" onclick="openWhatsApp()" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 19.98c-1.48 0-2.93-.4-4.21-1.15l-.3-.18-3.11.82.83-3.04-.19-.31c-.82-1.33-1.26-2.87-1.26-4.46 0-4.66 3.79-8.45 8.45-8.45 2.26 0 4.38.88 5.98 2.48 1.6 1.6 2.48 3.72 2.48 5.98 0 4.66-3.79 8.45-8.45 8.45h-.22z"/></svg></div>
+            <div class="tool-btn" onclick="openSettings()" title="Config"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div>
+            <div class="tool-btn" onclick="openAdmin()" title="Admin" style="fill:#ff4444; border-color:rgba(255,68,68,0.3)">
+                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
             </div>
         </div>
     </div>
 
-    <div class="side-buttons">
-        <div class="icon-btn map-layer-btn" onclick="toggleMapLayer()">🌍</div> 
-        <div class="icon-btn" onclick="openSearch()">🔍</div>
-        <div class="icon-btn" onclick="openChat()">💬</div>
-        <div class="icon-btn" onclick="openSettings()">⚙️</div>
-        <div class="icon-btn admin-btn" onclick="openAdmin()">🛡️</div>
-        <div class="icon-btn" onclick="centerMapOnUser()">⌖</div>
+    <div class="dashboard-container">
+        <div class="main-card flag1" id="mainCard">
+            <div class="status-tag" id="statusTag">LIVRE</div>
+            <div class="flag-switch-container">
+                <div class="flag-switch" id="flagSwitch" data-state="1" onclick="toggleFlagManual()">
+                    <div class="switch-bg"></div>
+                    <div class="flag-option active" id="opt1">BAND 1</div>
+                    <div class="flag-option" id="opt2">BAND 2</div>
+                </div>
+                <div class="auto-badge" id="autoBadge">🤖 AUTO</div>
+            </div>
+            <div class="big-price"><span class="currency-symbol">R$</span> <span id="mainPrice">0,00</span></div>
+            <div class="stats-row">
+                <div class="stat-item"><span class="stat-val" id="mainDist">0.0 km</span><span class="stat-lbl">Distância</span></div>
+                <div class="stat-item"><span class="stat-val" id="mainTime">00:00</span><span class="stat-lbl">Tempo</span></div>
+            </div>
+            <div class="controls-row">
+                <button class="btn-pause" id="btnPause" onclick="togglePause()">⏸</button>
+                <button class="btn-main" id="btnMain" onclick="toggleRide()">INICIAR CORRIDA</button>
+            </div>
+        </div>
     </div>
 
-    <div class="bottom-action-container">
-        <button class="btn-premium" id="actionBtn" onclick="toggleRide()">INICIAR CORRIDA</button>
+    <div id="mapScreen" class="map-screen">
+        <div class="map-controls-bar">
+            <input type="text" id="destInput" class="input-light" placeholder="Endereço de destino...">
+            <button class="tool-btn" style="background:var(--gold); color:black;" onclick="calculateEstimate()">IR</button>
+            <button class="tool-btn" style="background:#333; color:white;" onclick="closeMapScreen()">✕</button>
+        </div>
+        <div id="estimateCard" class="estimate-card"></div>
+        <div class="map-frame"><div id="visibleMap"></div></div>
     </div>
 
-    <div id="registerModal" class="overlay">
+    <div id="settingsModal" class="overlay">
         <div class="modal-box">
-            <h2 style="color:var(--gold); margin:0;">BEM-VINDO</h2>
-            <p style="color:#888;">Configure seu perfil</p>
-            <input type="text" id="regName" class="input-dark" placeholder="Nome">
-            <input type="text" id="regPonto" class="input-dark" placeholder="Ponto">
-            <button class="btn-full" onclick="registerDriver()">SALVAR</button>
+            <div class="close-btn" onclick="closeModal('settingsModal')">×</div>
+            <h3 style="color:var(--gold);">CONFIGURAÇÕES</h3>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('tab1', this)">BAND 1</div>
+                <div class="tab" onclick="switchTab('tab2', this)">BAND 2</div>
+                <div class="tab" onclick="switchTab('tabAuto', this)">AUTO</div>
+            </div>
+            <div id="tab1" class="tab-content active">
+                <label style="color:#aaa; font-size:0.8rem;">Bandeirada (R$)</label><input type="number" id="basePrice1" class="input-dark" value="5.00">
+                <label style="color:#aaa; font-size:0.8rem;">Preço/KM (>1.5km)</label><input type="number" id="kmPrice1" class="input-dark" value="2.50">
+                <label style="color:#aaa; font-size:0.8rem;">Preço/Hora</label><input type="number" id="hourPrice1" class="input-dark" value="24.00">
+            </div>
+            <div id="tab2" class="tab-content">
+                <label style="color:#00b7ff; font-size:0.8rem;">Bandeirada (R$)</label><input type="number" id="basePrice2" class="input-dark" value="6.00">
+                <label style="color:#00b7ff; font-size:0.8rem;">Preço/KM (>1.5km)</label><input type="number" id="kmPrice2" class="input-dark" value="3.00">
+                <label style="color:#00b7ff; font-size:0.8rem;">Preço/Hora</label><input type="number" id="hourPrice2" class="input-dark" value="30.00">
+            </div>
+            <div id="tabAuto" class="tab-content">
+                <div class="checkbox-row"><input type="checkbox" id="autoFlagCheck" style="transform:scale(1.5);"><span>Ativar troca automática</span></div>
+                <label style="color:#aaa; font-size:0.8rem;">Início Band 2</label><input type="number" id="autoStart" class="input-dark" value="22">
+                <label style="color:#aaa; font-size:0.8rem;">Fim Band 2</label><input type="number" id="autoEnd" class="input-dark" value="6">
+            </div>
+            <button class="btn-full" onclick="saveSettings()">SALVAR E FECHAR</button>
         </div>
     </div>
 
     <div id="receiptModal" class="overlay">
         <div class="modal-box">
-            <h2 style="margin:0; color:white;">FINALIZADO</h2>
-            <div class="receipt-total" style="background:#222; margin:15px 0; padding:15px;"><strong id="recTotal">R$ 0,00</strong></div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div><span style="color:#888; font-size:0.7rem;">DISTÂNCIA</span><br><strong style="color:white" id="recDist">0 km</strong></div>
-                <div><span style="color:#888; font-size:0.7rem;">TEMPO</span><br><strong style="color:white" id="recTime">00:00</strong></div>
+            <h2 style="color:white; font-family:'Orbitron'; margin-top:0;">RESUMO</h2>
+            <div style="background:#000; padding:20px; border-radius:10px; border:1px solid #333; margin:20px 0;">
+                <span style="font-size:0.8rem; color:#888;">TOTAL A PAGAR</span>
+                <strong id="recTotal" style="font-size:2.8rem; color:var(--gold); display:block; font-family:'Orbitron'">R$ 0,00</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; color:#ccc; font-size:0.9rem;">
+                <span>Dist: <b id="recDist" style="color:white">0 km</b></span><span>Tempo: <b id="recTime" style="color:white">00:00</b></span>
             </div>
             <button class="btn-full" style="background:var(--success); color:white;" onclick="shareRide()">COMPARTILHAR 📲</button>
-            <button class="btn-full" style="background:#333; color:white;" onclick="closeReceipt()">FECHAR</button>
+            <button class="btn-full" style="background:#333;" onclick="closeReceipt()">NOVA CORRIDA</button>
         </div>
     </div>
 
-    <div id="chatModal" class="overlay">
-        <div class="modal-box" style="text-align:left;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                <h3 style="margin:0; color:var(--gold);">RADIO TAXI</h3>
-                <span style="cursor:pointer; font-size:1.2rem;" onclick="closeChat()">✖</span>
-            </div>
-            <div class="chat-area">
-                <div class="chat-messages" id="chatMessages">
-                    <div style="text-align:center; color:#555; margin-top:20px;"><i>Frequência Aberta...</i></div>
-                </div>
-                <div class="chat-input-area">
-                    <input type="text" id="chatInput" placeholder="Mensagem...">
-                    <button onclick="sendMsg()" style="background:var(--gold); border:none; font-weight:bold; padding: 0 15px;">></button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="searchModal" class="overlay">
+    <div id="historyModal" class="overlay">
         <div class="modal-box">
-            <h3 style="color:var(--gold); margin-top:0;">COPILOTO</h3>
-            <p style="color:#aaa; font-size:0.9rem;">Digite o destino</p>
-            <input type="text" id="searchInput" class="input-dark" placeholder="Ex: Matriz SJDR">
-            <button class="btn-full" onclick="performSearch()">PESQUISAR</button>
-            <button class="btn-full" style="background:#333; color:white; margin-top:10px;" onclick="closeSearch()">CANCELAR</button>
+            <div class="close-btn" onclick="closeModal('historyModal')">×</div>
+            <h3 style="color:var(--gold);">HISTÓRICO</h3>
+            <div id="historyList" style="margin-top:15px; text-align:left; max-height:300px; overflow-y:auto;"></div>
         </div>
     </div>
 
-    <div id="settingsOverlay" class="overlay">
+    <div id="registerModal" class="overlay">
         <div class="modal-box">
-            <h3 style="color:var(--gold);">TARIFAS</h3>
-            <label style="color:#888; display:block; text-align:left; font-size:0.7rem;">Bandeirada (R$)</label>
-            <input type="number" id="basePrice" class="input-dark" value="5.00">
-            <label style="color:#888; display:block; text-align:left; font-size:0.7rem;">Preço KM (R$)</label>
-            <input type="number" id="kmPrice" class="input-dark" value="2.50">
-            <label style="color:#888; display:block; text-align:left; font-size:0.7rem;">Preço Hora (R$)</label>
-            <input type="number" id="hourPrice" class="input-dark" value="24.00">
-            <button class="btn-full" onclick="closeSettings()">SALVAR</button>
-            <button class="btn-full" style="background:#333; margin-top:5px;" onclick="closeSettings()">CANCELAR</button>
+            <h3 style="color:var(--gold);">BEM-VINDO</h3>
+            <input type="text" id="regName" class="input-dark" placeholder="Nome do Motorista">
+            <button class="btn-full" onclick="registerDriver()">INICIAR SISTEMA</button>
         </div>
     </div>
 
     <div id="adminModal" class="overlay">
         <div class="modal-box">
-            <h3 style="color:#ff4444; margin-top:0;">ADMINISTRATIVO</h3>
-            <div id="adminLogin">
-                <input type="password" id="adminPass" class="input-dark" placeholder="Senha">
-                <button class="btn-full" style="background:#ff4444; color:white;" onclick="checkAdmin()">ENTRAR</button>
-                <button class="btn-full" style="background:#333;" onclick="closeAdmin()">VOLTAR</button>
-            </div>
-            <div id="adminPanel" style="display:none;">
-                <table class="admin-table">
-                    <thead><tr><th>ID</th><th>NOME</th><th>PONTO</th><th>ST</th></tr></thead>
-                    <tbody id="driverTableBody"></tbody>
-                </table>
-                <div style="margin-top:20px; text-align:left; font-size:0.7rem; color:#666;">*Versão: 2.2 Proportional</div>
-                <button class="btn-full" style="background:#333;" onclick="closeAdmin()">SAIR</button>
-            </div>
+            <div class="close-btn" onclick="closeModal('adminModal')">×</div>
+            <h3 style="color:#ff4444;">ADMINISTRATIVO</h3>
+            <input type="password" id="adminPass" class="input-dark" placeholder="Senha">
+            <button class="btn-full" onclick="checkAdmin()">ACESSAR</button>
+            <div id="adminPanel" style="display:none; margin-top:15px; text-align:left; color:#ccc; font-size:0.85rem; background:#222; padding:10px; border-radius:10px;"></div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
     <script>
-        let driverInfo = { name: '', ponto: '', id: '000' };
+        // --- DADOS ---
+        let driverInfo = { name: '', id: '000' };
+        let rideHistory = [];
+        let currentFlag = 1;
+        let isMuted = false;
+        let config = {
+            f1: { base: 5.0, km: 2.5, hour: 24.0 },
+            f2: { base: 6.0, km: 3.0, hour: 30.0 },
+            auto: { active: false, start: 22, end: 6 }
+        };
+
         function initApp() {
-            try {
-                const data = localStorage.getItem('sjdr_taxi_driver');
-                if (data) { driverInfo = JSON.parse(data); updateDriverDisplay(); } 
-                else { document.getElementById('registerModal').classList.add('active'); }
-            } catch(e) { console.log("Erro Storage", e); }
+            const data = localStorage.getItem('sjdr_taxi_driver');
+            if (data) driverInfo = JSON.parse(data); else document.getElementById('registerModal').classList.add('active');
+            const hist = localStorage.getItem('sjdr_taxi_history');
+            if (hist) rideHistory = JSON.parse(hist);
+            const cfg = localStorage.getItem('sjdr_taxi_config');
+            if (cfg) config = JSON.parse(cfg);
+            
+            fillConfigInputs();
+            updateClock();
+            setupVoiceControl();
         }
+
+        function fillConfigInputs() {
+            document.getElementById('basePrice1').value = config.f1.base;
+            document.getElementById('kmPrice1').value = config.f1.km;
+            document.getElementById('hourPrice1').value = config.f1.hour;
+            document.getElementById('basePrice2').value = config.f2.base;
+            document.getElementById('kmPrice2').value = config.f2.km;
+            document.getElementById('hourPrice2').value = config.f2.hour;
+            document.getElementById('autoFlagCheck').checked = config.auto.active;
+            document.getElementById('autoStart').value = config.auto.start;
+            document.getElementById('autoEnd').value = config.auto.end;
+        }
+
         function registerDriver() {
             const name = document.getElementById('regName').value;
-            const ponto = document.getElementById('regPonto').value;
-            if(!name) return alert("Nome obrigatório");
-            driverInfo = { name, ponto, id: Math.floor(Math.random()*900)+100 };
+            if(!name) return alert("Nome necessário");
+            driverInfo = { name, id: Math.floor(Math.random()*900)+100 };
             localStorage.setItem('sjdr_taxi_driver', JSON.stringify(driverInfo));
             document.getElementById('registerModal').classList.remove('active');
-            updateDriverDisplay();
-        }
-        function updateDriverDisplay() { document.getElementById('displayDriverId').innerText = `MOT. #${driverInfo.id} | ${driverInfo.name}`; }
-
-        let map, carMarker, polyline, destMarker;
-        let streetLayer, satLayer;
-        let isSatellite = false;
-
-        function initMap() {
-            map = L.map('map', {zoomControl: false}).setView([-21.135, -44.261], 15);
-            streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 20 }).addTo(map);
-            satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri', maxZoom: 19 });
-        }
-        function toggleMapLayer() {
-            if (isSatellite) { map.removeLayer(satLayer); map.addLayer(streetLayer); isSatellite = false; } 
-            else { map.removeLayer(streetLayer); map.addLayer(satLayer); isSatellite = true; }
         }
 
-        let isRunning = false, watchId = null, intervalId = null;
-        let totalDistance = 0, startTime = 0; let path = []; let lastLat = 0, lastLng = 0;
+        function saveSettings() {
+            config.f1.base = parseFloat(document.getElementById('basePrice1').value);
+            config.f1.km = parseFloat(document.getElementById('kmPrice1').value);
+            config.f1.hour = parseFloat(document.getElementById('hourPrice1').value);
+            config.f2.base = parseFloat(document.getElementById('basePrice2').value);
+            config.f2.km = parseFloat(document.getElementById('kmPrice2').value);
+            config.f2.hour = parseFloat(document.getElementById('hourPrice2').value);
+            config.auto.active = document.getElementById('autoFlagCheck').checked;
+            config.auto.start = parseInt(document.getElementById('autoStart').value);
+            config.auto.end = parseInt(document.getElementById('autoEnd').value);
+            localStorage.setItem('sjdr_taxi_config', JSON.stringify(config));
+            closeModal('settingsModal');
+        }
+
+        // --- MAPA CORREÇÃO E FULLSCREEN ---
+        let mapVisible, routeControl;
+        function initMaps() {
+            mapVisible = L.map('visibleMap', {zoomControl: false}).setView([-21.135, -44.261], 15);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(mapVisible);
+        }
+
+        function openMapScreen() {
+            document.getElementById('mapScreen').classList.add('active');
+            setTimeout(() => { 
+                mapVisible.invalidateSize(); 
+                if(navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        mapVisible.setView([pos.coords.latitude, pos.coords.longitude], 16);
+                        L.marker([pos.coords.latitude, pos.coords.longitude]).addTo(mapVisible);
+                    });
+                }
+            }, 300);
+        }
+
+        function closeMapScreen() {
+            document.getElementById('mapScreen').classList.remove('active');
+            if(routeControl) { mapVisible.removeControl(routeControl); routeControl = null; }
+            document.getElementById('estimateCard').style.display='none';
+            document.getElementById('destInput').value='';
+        }
+
+        function calculateEstimate(destinationText = null) {
+            const query = destinationText || document.getElementById('destInput').value;
+            if(!query) return;
+            
+            if(destinationText) document.getElementById('destInput').value = destinationText;
+
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+                .then(r => r.json()).then(data => {
+                    if(!data.length) return alert("Não encontrado");
+                    const dest = L.latLng(data[0].lat, data[0].lon);
+                    
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        const start = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                        if(routeControl) mapVisible.removeControl(routeControl);
+                        routeControl = L.Routing.control({
+                            waypoints: [start, dest],
+                            lineOptions: { styles: [{color: '#007BFF', weight: 6}] },
+                            createMarker: function() { return null; },
+                            show: false
+                        }).on('routesfound', function(e) {
+                            const route = e.routes[0];
+                            const d = route.summary.totalDistance / 1000;
+                            const t = route.summary.totalTime / 60;
+                            
+                            const rates = currentFlag === 1 ? config.f1 : config.f2;
+                            let total = 0;
+                            if(d < 1.5) total = rates.base;
+                            else total = rates.base + ((d-1.5)*rates.km) + ((t/60)*rates.hour);
+                            
+                            const card = document.getElementById('estimateCard');
+                            card.style.display='block';
+                            card.innerHTML = `Estimativa: <span style="color:#007BFF">${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span> (${d.toFixed(1)}km)`;
+                            
+                            if(destinationText) speak(`Estimativa de ${Math.round(total)} reais.`);
+
+                        }).addTo(mapVisible);
+                    });
+                });
+        }
+
+        // --- COMANDO DE VOZ (JARVIS BLINDADO) ---
+        let recognition = null;
+        let isListening = false;
+
+        function setupVoiceControl() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                document.getElementById('micBtn').style.display = 'none';
+                return;
+            }
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'pt-BR';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => {
+                isListening = true;
+                document.getElementById('micBtn').classList.add('listening');
+                document.getElementById('voiceFeedback').style.display = 'block';
+                document.getElementById('voiceFeedback').innerText = "🎤 Ouvindo...";
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                document.getElementById('micBtn').classList.remove('listening');
+                document.getElementById('voiceFeedback').style.display = 'none';
+            };
+
+            recognition.onresult = (event) => {
+                const command = event.results[0][0].transcript.toLowerCase();
+                document.getElementById('voiceFeedback').innerText = "🗣️ " + command;
+                document.getElementById('voiceFeedback').style.display = 'block';
+                setTimeout(() => { processCommand(command); document.getElementById('voiceFeedback').style.display = 'none'; }, 1000);
+            };
+
+            recognition.onerror = (e) => {
+                console.log("Erro voz:", e.error);
+                isListening = false;
+                document.getElementById('micBtn').classList.remove('listening');
+            };
+        }
+
+        function toggleVoice() {
+            if (!recognition) setupVoiceControl();
+            if (!recognition) return alert("Navegador sem suporte a voz.");
+            if (isListening) { recognition.stop(); return; }
+            try { recognition.start(); } catch (e) { recognition.stop(); }
+        }
+
+        function processCommand(cmd) {
+            if (cmd.includes('iniciar') || cmd.includes('começar') || cmd.includes('ligar')) {
+                if(!isRunning) toggleRide(); else speak("A corrida já está em andamento.");
+            } 
+            else if (cmd.includes('encerrar') || cmd.includes('parar') || cmd.includes('fechar conta')) {
+                if(isRunning) toggleRide(); else speak("Não há corrida para encerrar.");
+            }
+            else if (cmd.includes('pausar') || cmd.includes('esperar') || cmd.includes('aguarde')) {
+                if(isRunning && !isPaused) togglePause();
+            }
+            else if (cmd.includes('retornar') || cmd.includes('continuar') || cmd.includes('voltar')) {
+                if(isRunning && isPaused) togglePause();
+            }
+            else if (cmd.includes('mapa')) {
+                if(cmd.includes('fechar') || cmd.includes('sair')) { closeMapScreen(); speak("Mapa fechado."); } 
+                else { openMapScreen(); speak("Mapa aberto."); }
+            }
+            else if (cmd.includes('histórico') || cmd.includes('ganhos') || cmd.includes('quanto ganhei')) {
+                openHistory(); speak("Abrindo histórico.");
+            }
+            else if (cmd.includes('calcular') || cmd.includes('levar para') || cmd.includes('ir para')) {
+                let dest = cmd.replace('calcular', '').replace('destino', '').replace('levar para', '').replace('ir para', '').replace('preço até', '').trim();
+                if(dest.length > 2) { openMapScreen(); speak("Calculando rota para " + dest); calculateEstimate(dest); } 
+                else { speak("Não entendi o destino."); }
+            }
+            else { speak("Comando não reconhecido."); }
+        }
+
+        // --- ÁUDIO ---
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('muteBtn');
+            if(isMuted) btn.classList.add('muted'); else btn.classList.remove('muted');
+        }
+
+        function speak(text) {
+            if (isMuted) return;
+            if ('speechSynthesis' in window) {
+                const u = new SpeechSynthesisUtterance(text); u.lang = 'pt-BR'; window.speechSynthesis.speak(u);
+            }
+        }
+
+        // --- TAXÍMETRO CORE ---
+        let isRunning = false, isPaused = false;
+        let watchId = null, intervalId = null;
+        let totalDistance = 0, startTime = 0;
+        let lastLat = 0, lastLng = 0;
+
+        function checkAutoFlag() {
+            const badge = document.getElementById('autoBadge');
+            if (config.auto.active) {
+                badge.style.display = 'flex';
+                const h = new Date().getHours();
+                const s = config.auto.start; const e = config.auto.end;
+                let isF2 = (s > e) ? (h >= s || h < e) : (h >= s && h < e);
+                if (isF2 && currentFlag !== 2) setFlag(2);
+                if (!isF2 && currentFlag !== 1) setFlag(1);
+            } else { badge.style.display = 'none'; }
+        }
+
+        function toggleFlagManual() {
+            if (config.auto.active) return alert("Modo Auto Ativo");
+            setFlag(currentFlag === 1 ? 2 : 1);
+        }
+
+        function setFlag(f) {
+            currentFlag = f;
+            document.getElementById('flagSwitch').setAttribute('data-state', f);
+            const card = document.getElementById('mainCard');
+            if(f===1) { card.classList.add('flag1'); card.classList.remove('flag2'); document.getElementById('opt1').classList.add('active'); document.getElementById('opt2').classList.remove('active');}
+            else { card.classList.add('flag2'); card.classList.remove('flag1'); document.getElementById('opt2').classList.add('active'); document.getElementById('opt1').classList.remove('active');}
+        }
 
         function toggleRide() {
-            const btn = document.getElementById('actionBtn');
+            const btn = document.getElementById('btnMain');
             if (!isRunning) {
-                isRunning = true; btn.innerText = "ENCERRAR CORRIDA"; btn.classList.add('stop');
-                totalDistance = 0; path = []; startTime = Date.now();
-                document.getElementById('totalPrice').innerText = "---";
-                document.getElementById('fareLabel').innerText = "Calculando...";
-                if (navigator.geolocation) {
-                    watchId = navigator.geolocation.watchPosition(updatePos, gpsError, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
-                }
+                isRunning = true; isPaused = false;
+                btn.innerText = "ENCERRAR"; btn.classList.add('stop');
+                document.getElementById('btnPause').style.display = 'flex';
+                document.getElementById('statusTag').innerText = "EM CORRIDA"; document.getElementById('statusTag').className = "status-tag running";
+                totalDistance = 0; startTime = Date.now(); lastLat = 0;
+                updateScreen(0,0,0);
+                speak("Corrida iniciada.");
+                if (navigator.geolocation) watchId = navigator.geolocation.watchPosition(updatePos, null, {enableHighAccuracy:true});
                 intervalId = setInterval(updateCalc, 1000);
             } else {
                 isRunning = false;
-                if (watchId) navigator.geolocation.clearWatch(watchId);
-                if (intervalId) clearInterval(intervalId);
-                if (carMarker) carMarker.getElement().classList.remove('moving');
-                if (destMarker) { map.removeLayer(destMarker); destMarker = null; }
-                
-                let finalPrice = document.getElementById('totalPrice').innerText;
-                if (totalDistance < 2.0) { finalPrice = parseFloat(document.getElementById('basePrice').value).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
-                
-                document.getElementById('recTotal').innerText = finalPrice;
-                document.getElementById('recDist').innerText = document.getElementById('distDisplay').innerText;
-                document.getElementById('recTime').innerText = document.getElementById('timeDisplay').innerText;
-                document.getElementById('receiptModal').classList.add('active');
+                if(watchId) navigator.geolocation.clearWatch(watchId);
+                if(intervalId) clearInterval(intervalId);
+                showReceipt();
                 btn.innerText = "INICIAR CORRIDA"; btn.classList.remove('stop');
+                document.getElementById('btnPause').style.display = 'none';
+                document.getElementById('statusTag').innerText = "LIVRE"; document.getElementById('statusTag').className = "status-tag";
             }
+        }
+
+        function togglePause() {
+            if(!isRunning) return; isPaused = !isPaused;
+            const btn = document.getElementById('btnPause'); const tag = document.getElementById('statusTag');
+            if(isPaused) { btn.classList.add('active'); btn.innerText = "▶"; tag.className = "status-tag paused"; speak("Pausado"); }
+            else { btn.classList.remove('active'); btn.innerText = "⏸"; tag.className = "status-tag running"; speak("Continuando"); }
         }
 
         function updatePos(pos) {
-            const lat = pos.coords.latitude; const lng = pos.coords.longitude; const acc = pos.coords.accuracy; const latlng = [lat, lng];
-            const gpsText = document.getElementById('gpsText'); const gpsDot = document.querySelector('.gps-dot');
-            
-            if (acc <= 20) { gpsText.innerText = `Sinal Excelente (±${Math.round(acc)}m)`; gpsText.style.color="#25D366"; gpsDot.style.background="#25D366"; }
-            else if (acc <= 50) { gpsText.innerText = `Sinal Bom (±${Math.round(acc)}m)`; gpsText.style.color="#FFD700"; gpsDot.style.background="#FFD700"; }
-            else { gpsText.innerText = "Sinal Fraco - Ignorando"; gpsText.style.color="#ff4444"; gpsDot.style.background="#ff4444"; return; }
-
-            if (!carMarker) {
-                const icon = L.divIcon({ className: 'car-icon-container', html: getCarSvg(driverInfo.id), iconSize: [60,60], iconAnchor: [30,30] });
-                carMarker = L.marker(latlng, {icon: icon, zIndexOffset: 1000}).addTo(map);
-                polyline = L.polyline([], {color: '#DAA520', weight: 5}).addTo(map);
-                path.push(latlng); map.setView(latlng, 17); lastLat = lat; lastLng = lng; return;
-            }
-            const dist = map.distance([lastLat, lastLng], latlng);
-            if (dist > 5) {
-                totalDistance += dist / 1000; path.push(latlng);
-                carMarker.setLatLng(latlng); polyline.setLatLngs(path); map.setView(latlng);
-                lastLat = lat; lastLng = lng;
-                const el = carMarker.getElement();
-                if(el) { el.classList.add('moving'); clearTimeout(carMarker.timer); carMarker.timer = setTimeout(() => el.classList.remove('moving'), 2000); }
-            }
+            const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+            if(lastLat === 0) { lastLat = lat; lastLng = lng; return; }
+            const R = 6371; 
+            const d = R * (2 * Math.atan2(Math.sqrt(Math.sin((lat-lastLat)*Math.PI/180/2)**2 + Math.cos(lastLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin((lng-lastLng)*Math.PI/180/2)**2), Math.sqrt(1-(Math.sin((lat-lastLat)*Math.PI/180/2)**2 + Math.cos(lastLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin((lng-lastLng)*Math.PI/180/2)**2))));
+            if(d > 0.005 && !isPaused) { totalDistance += d; lastLat = lat; lastLng = lng; }
         }
-        function gpsError() { document.getElementById('gpsText').innerText = "Sem GPS!"; document.getElementById('gpsText').style.color="#ff4444"; }
 
         function updateCalc() {
-            const base = parseFloat(document.getElementById('basePrice').value);
-            const kmP = parseFloat(document.getElementById('kmPrice').value);
-            const hrP = parseFloat(document.getElementById('hourPrice').value);
-            const ms = Date.now() - startTime;
-            document.getElementById('distDisplay').innerText = totalDistance.toFixed(2) + ' km';
-            const s = Math.floor((ms/1000)%60); const m = Math.floor((ms/60000)%60); const h = Math.floor(ms/3600000);
-            document.getElementById('timeDisplay').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-            if (totalDistance < 2.0) { document.getElementById('totalPrice').innerText = "---"; document.getElementById('fareLabel').innerText = "Abaixo de 2km"; }
-            else { const excess = totalDistance - 2.0; const total = base + (excess * kmP) + ((ms/3600000) * hrP); document.getElementById('totalPrice').innerText = total.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); document.getElementById('fareLabel').innerText = "Total Atual"; }
+            if(isPaused) return;
+            const rates = currentFlag === 1 ? config.f1 : config.f2;
+            const ms = Date.now() - startTime; const hrs = ms / 3600000;
+            let total = (totalDistance < 1.5) ? rates.base : rates.base + ((totalDistance - 1.5) * rates.km) + (hrs * rates.hour);
+            updateScreen(total, totalDistance, ms);
         }
 
-        function getCarSvg(id) { return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="60" height="60"><g fill="#FFD700" stroke="#DAA520" stroke-width="2"><path d="M10 32 L14 22 L22 16 L42 16 L50 22 L58 32 L58 42 L6 42 L6 32 Z"/><rect x="6" y="32" width="52" height="12" fill="#DAA520"/><path d="M16 23 L23 18 L41 18 L48 23 Z" fill="#222" stroke="none"/></g><text x="32" y="32" font-family="Arial" font-weight="bold" font-size="10" text-anchor="middle" fill="#000">${id}</text><g class="car-wheel"><circle cx="16" cy="44" r="7" fill="#111" stroke="#333" stroke-width="2"/><circle cx="16" cy="44" r="3" fill="#777"/></g><g class="car-wheel"><circle cx="48" cy="44" r="7" fill="#111" stroke="#333" stroke-width="2"/><circle cx="48" cy="44" r="3" fill="#777"/></g></svg>`; }
-        function centerMapOnUser() { map.locate({setView: true, maxZoom: 17}); }
-        function shareRide() { const text = `🚖 Táxi #${driverInfo.id}\nValor: ${document.getElementById('recTotal').innerText}\nDistância: ${document.getElementById('recDist').innerText}`; if(navigator.share) navigator.share({title:'Recibo', text:text}); else alert("Recibo copiado!"); }
-        function closeReceipt() { document.getElementById('receiptModal').classList.remove('active'); if(path.length > 0) map.fitBounds(polyline.getBounds()); document.getElementById('totalPrice').innerText = "R$ 0,00"; document.getElementById('distDisplay').innerText = "0.0 km"; document.getElementById('timeDisplay').innerText = "00:00"; }
-        
-        function openSettings() { document.getElementById('settingsOverlay').classList.add('active'); }
-        function closeSettings() { document.getElementById('settingsOverlay').classList.remove('active'); }
-        function openChat() { document.getElementById('chatModal').classList.add('active'); }
-        function closeChat() { document.getElementById('chatModal').classList.remove('active'); }
-        function sendMsg() { const input = document.getElementById('chatInput'); if(input.value) { const d = document.createElement('div'); d.innerHTML = `<b style="color:var(--gold)">#${driverInfo.id}:</b> ${input.value}`; d.style.color = '#fff'; d.style.marginTop = '5px'; document.getElementById('chatMessages').appendChild(d); input.value = ''; } }
-        
-        function openAdmin() { document.getElementById('adminModal').classList.add('active'); document.getElementById('adminLogin').style.display = 'block'; document.getElementById('adminPanel').style.display = 'none'; document.getElementById('adminPass').value = ''; }
-        function closeAdmin() { document.getElementById('adminModal').classList.remove('active'); }
-        function checkAdmin() { if (document.getElementById('adminPass').value === "1234") { document.getElementById('adminLogin').style.display = 'none'; document.getElementById('adminPanel').style.display = 'block'; renderAdminTable(); } else { alert("Senha Incorreta!"); } }
-        function renderAdminTable() { const tbody = document.getElementById('driverTableBody'); let html = `<tr><td>#${driverInfo.id}</td><td>${driverInfo.name}</td><td>${driverInfo.ponto || 'Geral'}</td><td><span class="status-dot" style="background:#25D366"></span>On</td></tr>`; html += `<tr><td>#104</td><td>Roberto S.</td><td>Rodoviária</td><td><span class="status-dot" style="background:#25D366"></span>On</td></tr>`; tbody.innerHTML = html; }
+        function updateScreen(p, d, ms) {
+            document.getElementById('mainPrice').innerText = p.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('mainDist').innerText = d.toFixed(2) + ' km';
+            const s=Math.floor((ms/1000)%60); const m=Math.floor((ms/60000)%60); const h=Math.floor(ms/3600000);
+            document.getElementById('mainTime').innerText = `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }
 
-        function openSearch() { document.getElementById('searchModal').classList.add('active'); }
-        function closeSearch() { document.getElementById('searchModal').classList.remove('active'); }
-        function performSearch() { const query = document.getElementById('searchInput').value; if(!query) return; const btn = document.querySelector('#searchModal .btn-full'); const originalText = btn.innerText; btn.innerText = "BUSCANDO..."; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`).then(r => r.json()).then(data => { if(data && data.length > 0) { closeSearch(); if(destMarker) map.removeLayer(destMarker); const destLatLng = [data[0].lat, data[0].lon]; map.flyTo(destLatLng, 16); destMarker = L.marker(destLatLng).addTo(map).bindPopup(`<b>Destino:</b><br>${data[0].display_name}`).openPopup(); } else { alert("Não encontrado."); } }).catch(() => alert("Erro conexão.")).finally(() => btn.innerText = originalText); }
+        function showReceipt() {
+            const p = document.getElementById('mainPrice').innerText;
+            document.getElementById('recTotal').innerText = "R$ " + p;
+            document.getElementById('recDist').innerText = document.getElementById('mainDist').innerText;
+            document.getElementById('recTime').innerText = document.getElementById('mainTime').innerText;
+            document.getElementById('receiptModal').classList.add('active');
+            
+            const ride = { date: new Date().toLocaleTimeString(), val: parseFloat(p.replace('.','').replace(',','.')) };
+            rideHistory.push(ride); localStorage.setItem('sjdr_taxi_history', JSON.stringify(rideHistory));
+            speak("Corrida finalizada. Total " + p.replace(',', ' reais e ') + " centavos");
+        }
 
-        initApp(); initMap();
+        // --- UTIL ---
+        function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); checkAutoFlag(); }
+        setInterval(updateClock, 1000);
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
+        function openAdmin() { 
+            document.getElementById('adminModal').classList.add('active'); 
+            document.getElementById('adminPanel').style.display='none'; 
+            document.getElementById('adminPass').value=''; 
+        }
+        function checkAdmin() {
+            if(document.getElementById('adminPass').value==='1234') {
+                document.getElementById('adminPanel').style.display='block';
+                document.getElementById('adminPanel').innerHTML = `Motorista: <b style="color:white">${driverInfo.name}</b><br>ID: ${driverInfo.id}<br>Versão: 5.1 Final`;
+            } else alert('Senha errada');
+        }
+        function openWhatsApp() { window.open(`https://wa.me/`, '_blank'); }
+        function shareApp() { if(navigator.share) navigator.share({title:'Taxímetro Virtual', url:window.location.href}); else alert("Link copiado!"); }
+        function closeReceipt() { closeModal('receiptModal'); updateScreen(0,0,0); }
+        function shareRide() { navigator.share({text: `Táxi R$ ${document.getElementById('recTotal').innerText}`}); }
+        function switchTab(id, el) { 
+            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); 
+            document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); 
+            el.classList.add('active'); document.getElementById(id).classList.add('active'); 
+        }
+        function openHistory() {
+            document.getElementById('historyModal').classList.add('active');
+            const l = document.getElementById('historyList'); l.innerHTML = ''; let t = 0;
+            rideHistory.forEach(r => { t += r.val; l.innerHTML += `<div style="background:#222;padding:10px;margin-bottom:5px;display:flex;justify-content:space-between;border-left:3px solid gold;color:white;"><span>${r.date}</span><span>R$ ${r.val.toFixed(2).replace('.',',')}</span></div>`; });
+            document.getElementById('dayTotal').innerText = "R$ " + t.toFixed(2).replace('.',',');
+        }
+        function clearHistory() { if(confirm("Limpar?")) { rideHistory=[]; localStorage.removeItem('sjdr_taxi_history'); openHistory(); } }
+
+        initApp(); initMaps();
     </script>
 </body>
 </html>
