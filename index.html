@@ -2,208 +2,220 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Taxímetro Pro V12</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Taximeter X</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        /* --- ESTILO NEON DARK --- */
+        /* --- CORE SYSTEM (STARTUP GRADE) --- */
         :root {
-            --bg: #0f172a; 
-            --panel: #1e293b; 
-            --primary: #22c55e; 
-            --accent: #3b82f6; 
-            --gold: #eab308; 
-            --text: #f8fafc;
+            --bg: #0f172a; --panel: #1e293b; --primary: #22c55e;
+            --accent: #3b82f6; --gold: #eab308; --danger: #ef4444;
+            --text: #f8fafc; --gray: #94a3b8;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        
-        body {
-            margin: 0; padding: 0; width: 100%; height: 100vh;
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
+
+        /* TRAVA A TELA NO CELULAR (APP NATIVO FEEL) */
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100dvh; /* Dynamic Height */
             background-color: var(--bg); color: var(--text);
             font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Impede scroll da página inteira */
+            position: fixed; /* Fixa o app na tela */
+        }
+
+        /* LAYOUT FLEXÍVEL VERTICAL */
+        #app-container {
             display: flex; flex-direction: column;
-            overflow: hidden; /* Evita rolagem da página inteira */
+            height: 100%; width: 100%;
+            padding-bottom: env(safe-area-inset-bottom); /* Respeita iPhone X+ */
         }
 
         /* HEADER */
-        .app-header {
+        header {
             flex: 0 0 60px;
             display: flex; justify-content: space-between; align-items: center;
-            padding: 0 20px;
-            background: rgba(15, 23, 42, 0.95);
-            border-bottom: 1px solid #334155;
-            z-index: 50;
+            padding: 0 20px; background: rgba(15, 23, 42, 0.98);
+            border-bottom: 1px solid #334155; z-index: 20;
         }
-        .brand { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px; }
-        .brand span { color: var(--primary); }
-        .header-info { text-align: right; }
-        .clock { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-weight: bold; font-size: 0.9rem; }
-        .driver { font-size: 0.7rem; color: #94a3b8; }
-        .driver b { color: var(--gold); }
+        .logo { font-weight: 900; font-size: 1.2rem; letter-spacing: -1px; }
+        .logo span { color: var(--primary); }
+        .info-header { text-align: right; font-size: 0.75rem; line-height: 1.2; }
+        .clock { color: var(--accent); font-family: 'JetBrains Mono'; font-weight: bold; }
 
-        /* ÁREA PRINCIPAL (Mostrador) */
-        .viewport {
+        /* ÁREA PRINCIPAL (CRESCE PARA OCUPAR O ESPAÇO) */
+        main {
             flex: 1;
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
-            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 80%);
-            padding: 20px;
             position: relative;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 70%);
+            padding: 10px;
         }
 
-        .label-price { font-size: 0.8rem; letter-spacing: 2px; color: #64748b; margin-bottom: 10px; text-transform: uppercase; }
-        .value-price { 
+        .price-label { font-size: 0.7rem; letter-spacing: 2px; color: var(--gray); margin-bottom: 5px; text-transform: uppercase; }
+        .price-val { 
             font-family: 'JetBrains Mono', monospace; 
-            font-size: 4.5rem; 
-            font-weight: 700; 
-            color: var(--primary); 
-            text-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
-            line-height: 1;
+            font-size: 4rem; font-weight: 700; color: var(--primary); 
+            text-shadow: 0 0 30px rgba(34, 197, 94, 0.25);
+            transition: color 0.3s;
         }
+        
+        /* BOTÕES DE BANDEIRA */
+        .flag-toggle {
+            display: flex; background: #334155; border-radius: 50px; padding: 4px; margin-top: 15px;
+            position: relative; z-index: 5;
+        }
+        .f-btn {
+            background: transparent; border: none; color: var(--gray);
+            padding: 8px 24px; border-radius: 40px; font-weight: 800; font-size: 0.8rem;
+            cursor: pointer; transition: 0.2s;
+        }
+        .f-btn.active { background: var(--primary); color: #000; box-shadow: 0 4px 12px rgba(34,197,94,0.4); }
+        .f-btn.active2 { background: var(--gold); color: #000; box-shadow: 0 4px 12px rgba(234,179,8,0.4); }
+        .f-lock { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: var(--gold); display: none; white-space: nowrap; }
 
-        /* SELETOR BANDEIRA */
-        .flag-box {
-            display: flex; gap: 10px; margin-top: 20px;
-            background: #334155; padding: 5px; border-radius: 50px;
-        }
-        .flag-btn {
-            background: transparent; border: none; color: #94a3b8;
-            padding: 8px 20px; border-radius: 20px;
-            font-weight: bold; font-size: 0.8rem; cursor: pointer; transition: 0.2s;
-        }
-        .flag-btn.active { background: var(--primary); color: #000; box-shadow: 0 4px 10px rgba(34,197,94,0.3); }
-        .flag-btn.active2 { background: var(--gold); color: #000; box-shadow: 0 4px 10px rgba(234,179,8,0.3); }
-        .flag-lock { margin-top: 5px; font-size: 0.65rem; color: var(--gold); display: none; }
-
-        /* GRID INFORMAÇÕES */
-        .stats-grid {
+        /* GRID DE DADOS */
+        .data-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
-            width: 100%; max-width: 400px; margin-top: 30px;
+            width: 100%; max-width: 380px; margin-top: 25px;
         }
-        .stat-card {
-            background: rgba(255,255,255,0.03); border-radius: 12px;
-            padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);
+        .data-card {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px; padding: 15px; text-align: center;
         }
-        .stat-val { font-size: 1.4rem; font-weight: bold; color: white; }
-        .stat-lbl { font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; margin-top: 4px; }
+        .d-val { font-size: 1.4rem; font-weight: 800; color: #fff; }
+        .d-lbl { font-size: 0.6rem; color: var(--gray); text-transform: uppercase; margin-top: 2px; }
 
-        /* BOTÕES DE AÇÃO */
-        .action-area {
-            padding: 20px;
+        /* ÁREA DE CONTROLE (BOTÕES GRANDES) */
+        .control-area {
+            padding: 15px 20px;
             background: var(--bg);
+            border-top: 1px solid #1e293b;
+            flex-shrink: 0; /* Impede que esmague */
         }
-        .btn-main {
-            width: 100%; padding: 18px; border: none; border-radius: 14px;
-            font-size: 1.1rem; font-weight: 800; text-transform: uppercase;
-            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-            color: white; transition: transform 0.1s;
+        .btn-xl {
+            width: 100%; padding: 16px; border-radius: 14px; border: none;
+            font-size: 1.1rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;
+            color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+            touch-action: manipulation; /* REMOVE DELAY DO TOQUE */
         }
-        .btn-main:active { transform: scale(0.98); }
-        .btn-start { background: linear-gradient(135deg, #22c55e, #166534); box-shadow: 0 4px 0 #14532d; }
-        .btn-stop { background: linear-gradient(135deg, #ef4444, #991b1b); box-shadow: 0 4px 0 #7f1d1d; }
-        .btn-pause { background: #334155; flex: 1; box-shadow: 0 4px 0 #1e293b; }
+        .btn-xl:active { transform: scale(0.97); opacity: 0.9; }
+        .bg-start { background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 6px 20px rgba(34,197,94,0.25); }
+        .bg-stop { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 6px 20px rgba(239,68,68,0.25); }
+        .bg-pause { background: #334155; flex: 1; margin-right: 10px; }
 
-        /* MENU INFERIOR (DOCK) */
+        /* DOCK MENU (RODAPÉ) */
         .dock {
             display: grid; grid-template-columns: repeat(5, 1fr);
-            background: #0f172a; border-top: 1px solid #334155;
-            padding-bottom: env(safe-area-inset-bottom);
+            background: #0f172a; padding: 8px 0 20px 0; /* Extra padding bottom iOS */
+            border-top: 1px solid #334155;
+            flex-shrink: 0;
         }
         .dock-btn {
             background: none; border: none; color: #64748b;
-            padding: 12px 0; display: flex; flex-direction: column; align-items: center;
-            font-size: 0.6rem; font-weight: 600; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            font-size: 0.6rem; font-weight: 700; padding: 5px; cursor: pointer;
         }
-        .dock-btn svg { width: 24px; height: 24px; margin-bottom: 4px; }
-        .dock-btn:active { color: var(--primary); background: rgba(255,255,255,0.05); }
+        .dock-btn svg { width: 22px; height: 22px; }
+        .dock-btn:active { color: var(--primary); }
 
-        /* MODAIS */
-        .modal-overlay {
+        /* MODAIS (GENÉRICOS) */
+        .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 1000;
-            display: none; justify-content: center; align-items: flex-end;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            z-index: 100; display: none; align-items: flex-end; justify-content: center;
         }
-        .modal-box {
-            width: 100%; max-width: 600px;
-            background: #1e293b;
-            border-radius: 20px 20px 0 0;
-            padding: 25px;
+        .sheet {
+            width: 100%; max-width: 600px; background: #1e293b;
+            border-radius: 24px 24px 0 0; padding: 25px;
             max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
             display: flex; flex-direction: column;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
         }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .modal-title { font-size: 1.2rem; font-weight: bold; color: white; }
-        .btn-close { background: none; border: none; color: #94a3b8; font-size: 2rem; line-height: 1; cursor: pointer; }
+        .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 15px; }
+        .sheet-title { font-size: 1.2rem; font-weight: 800; color: white; }
+        .close-icon { font-size: 1.8rem; color: var(--gray); background: none; border: none; padding: 0 10px; }
 
-        /* INPUTS CONFIG */
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 5px; }
-        .form-input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px; font-size: 1rem; }
+        /* FORMULÁRIOS */
+        .inp-group { margin-bottom: 12px; }
+        .inp-lbl { font-size: 0.7rem; color: var(--gray); display: block; margin-bottom: 5px; font-weight: 600; }
+        .inp-field { 
+            width: 100%; background: #0f172a; border: 1px solid #334155; 
+            color: white; padding: 12px; border-radius: 10px; font-size: 1rem; 
+        }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* MAPA */
+        .map-box { width: 100%; height: 350px; background: #333; border-radius: 12px; margin-bottom: 15px; }
+        .leaflet-control-geocoder { width: 100%; font-family: 'Inter'; }
         
-        /* SEARCH DO MAPA */
-        .leaflet-control-geocoder { background: white; border-radius: 4px; padding: 5px; min-width: 250px; }
-        .leaflet-control-geocoder input { width: 100%; color: #000; font-size: 14px; }
+        /* Scrollbar suave */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
     </style>
 </head>
 <body>
 
-    <div class="app-header">
-        <div class="brand">TAXI<span>PRO</span></div>
-        <div class="header-info">
-            <div class="clock" id="liveClock">00:00:00</div>
-            <div class="driver" id="driverDisplay">Mot: <b>...</b></div>
+<div id="app-container">
+    
+    <header>
+        <div class="logo">TAXI<span>X</span></div>
+        <div class="info-header">
+            <div class="clock" id="clock">00:00:00</div>
+            <div id="driverDisplay">Mot: ...</div>
         </div>
-    </div>
+    </header>
 
-    <div class="viewport">
-        <div class="label-price">VALOR DA CORRIDA</div>
-        <div class="value-price" id="displayPrice">R$ 0,00</div>
+    <main>
+        <div class="price-label">VALOR CORRIDA</div>
+        <div class="price-val" id="displayVal">R$ 0,00</div>
 
-        <div class="flag-box">
-            <button class="flag-btn active" id="btnFlag1" onclick="mudarBandeira(1)">BANDEIRA 1</button>
-            <button class="flag-btn" id="btnFlag2" onclick="mudarBandeira(2)">BANDEIRA 2</button>
-        </div>
-        <div class="flag-lock" id="flagLockText">🔒 HORÁRIO AUTOMÁTICO ATIVO</div>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-val" id="displayDist">0.0</div>
-                <div class="stat-lbl">KM (Cobrado > 1.5)</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-val" id="displayTime">00:00</div>
-                <div class="stat-lbl">TEMPO DE CORRIDA</div>
+        <div style="position: relative; margin-top: 10px;">
+            <div class="f-lock" id="flagLock">🔒 AUTO HORÁRIO</div>
+            <div class="flag-toggle">
+                <button class="f-btn active" id="btnB1" onclick="manualFlag(1)">BAND 1</button>
+                <button class="f-btn" id="btnB2" onclick="manualFlag(2)">BAND 2</button>
             </div>
         </div>
-    </div>
 
-    <div class="action-area">
-        <div id="boxStart">
-            <button class="btn-main btn-start" onclick="iniciarCorrida()">
+        <div class="data-grid">
+            <div class="data-card">
+                <div class="d-val" id="displayDist">0.0</div>
+                <div class="d-lbl">KM (Cobrado > 1.5)</div>
+            </div>
+            <div class="data-card">
+                <div class="d-val" id="displayTime">00:00</div>
+                <div class="d-lbl">TEMPO TOTAL</div>
+            </div>
+        </div>
+    </main>
+
+    <div class="control-area">
+        <div id="ctrl-start">
+            <button class="btn-xl bg-start" onclick="iniciarCorrida()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                 INICIAR CORRIDA
             </button>
         </div>
-
-        <div id="boxRunning" style="display:none; gap:10px;">
-            <button class="btn-main btn-pause" onclick="pausarCorrida()" id="btnPauseIcon">
+        <div id="ctrl-run" style="display:none; display:flex;">
+            <button class="btn-xl bg-pause" id="btnPause" onclick="pausarCorrida()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
             </button>
-            <button class="btn-main btn-stop" onclick="encerrarCorrida()" style="flex:3">
+            <button class="btn-xl bg-stop" onclick="encerrarCorrida()" style="flex:3">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
                 ENCERRAR
             </button>
@@ -211,7 +223,7 @@
     </div>
 
     <div class="dock">
-        <button class="dock-btn" onclick="abrirModal('modalSim')">
+        <button class="dock-btn" onclick="openModal('mdlSim')">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
             Simular
         </button>
@@ -227,399 +239,343 @@
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58z"/></svg>
             Ajustes
         </button>
-        <button class="dock-btn" onclick="abrirModal('modalAdmin')">
+        <button class="dock-btn" onclick="openModal('mdlAdmin')">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
             Admin
         </button>
     </div>
 
-    <div id="modalSim" class="modal-overlay">
-        <div class="modal-box" style="height:90vh;">
-            <div class="modal-header"><span class="modal-title">Simulador</span><button class="btn-close" onclick="fecharModal('modalSim')">×</button></div>
-            <div id="simMap" style="flex:1; background:#333; border-radius:10px; min-height:300px;"></div>
-            <div style="background:#0f172a; padding:15px; margin-top:10px; border-radius:10px; text-align:center;">
-                <div style="font-size:0.7rem; color:#94a3b8;">ESTIMATIVA</div>
-                <div id="simPrice" style="font-size:1.8rem; font-weight:bold; color:var(--primary)">R$ 0,00</div>
-                <div id="simDist" style="color:white; font-size:0.9rem;">0.0 km</div>
-            </div>
-            <button class="btn-main btn-pause" onclick="fecharModal('modalSim')" style="margin-top:10px;">FECHAR</button>
+</div>
+
+<div id="mdlConfig" class="overlay">
+    <div class="sheet">
+        <div class="sheet-head"><span class="sheet-title">Ajustes</span><button class="close-icon" onclick="closeModal('mdlConfig')">×</button></div>
+        
+        <div class="row-2">
+            <div class="inp-group"><label class="inp-lbl">Band 1 (R$)</label><input type="number" id="c_b1" class="inp-field"></div>
+            <div class="inp-group"><label class="inp-lbl">Km 1 (R$)</label><input type="number" id="c_k1" class="inp-field"></div>
+        </div>
+        <div class="row-2">
+            <div class="inp-group"><label class="inp-lbl">Band 2 (R$)</label><input type="number" id="c_b2" class="inp-field"></div>
+            <div class="inp-group"><label class="inp-lbl">Km 2 (R$)</label><input type="number" id="c_k2" class="inp-field"></div>
+        </div>
+        <div class="inp-group"><label class="inp-lbl">Minuto (R$)</label><input type="number" id="c_min" class="inp-field"></div>
+        
+        <div style="margin:10px 0; border-top:1px solid #334155;"></div>
+        <div class="inp-lbl" style="color:var(--gold); margin-bottom:10px;">AUTO BANDEIRA 2 (HORÁRIO)</div>
+        <div class="row-2">
+            <div class="inp-group"><label class="inp-lbl">Início (H)</label><input type="number" id="c_hi" class="inp-field"></div>
+            <div class="inp-group"><label class="inp-lbl">Fim (H)</label><input type="number" id="c_hf" class="inp-field"></div>
+        </div>
+
+        <button class="btn-xl bg-start" onclick="salvarConfig()">SALVAR</button>
+    </div>
+</div>
+
+<div id="mdlSim" class="overlay">
+    <div class="sheet" style="height:90vh;">
+        <div class="sheet-head"><span class="sheet-title">Simulador</span><button class="close-icon" onclick="closeModal('mdlSim')">×</button></div>
+        <div id="map" class="map-box"></div>
+        <div style="background:#0f172a; padding:15px; border-radius:12px; text-align:center; margin-bottom:15px;">
+            <div class="inp-lbl">ESTIMATIVA</div>
+            <div id="simPrice" style="font-size:2rem; font-weight:800; color:var(--primary)">R$ 0,00</div>
+            <div id="simInfo" style="color:white; font-size:0.9rem;">0 km | 0 min</div>
+        </div>
+        <button class="btn-xl bg-pause" onclick="closeModal('mdlSim')">FECHAR</button>
+    </div>
+</div>
+
+<div id="mdlHist" class="overlay">
+    <div class="sheet">
+        <div class="sheet-head"><span class="sheet-title">Histórico</span><button class="close-icon" onclick="closeModal('mdlHist')">×</button></div>
+        <div id="histContent" style="flex:1; margin-bottom:15px;"></div>
+        <button class="btn-xl bg-stop" onclick="limparHistorico()">LIMPAR TUDO</button>
+    </div>
+</div>
+
+<div id="mdlAdmin" class="overlay">
+    <div class="sheet">
+        <div class="sheet-head"><span class="sheet-title">Admin</span><button class="close-icon" onclick="closeModal('mdlAdmin')">×</button></div>
+        <div id="adminLogin">
+            <input type="password" id="adminPass" class="inp-field" placeholder="Senha Mestra" style="text-align:center; margin-bottom:15px;">
+            <button class="btn-xl bg-start" onclick="loginAdmin()">ENTRAR</button>
+        </div>
+        <div id="adminPanel" style="display:none;">
+            <div id="driverList">Carregando...</div>
         </div>
     </div>
+</div>
 
-    <div id="modalConfig" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-header"><span class="modal-title">Configurar Tarifas</span><button class="btn-close" onclick="fecharModal('modalConfig')">×</button></div>
-            
-            <div class="form-row">
-                <div class="form-group"><label>Band 1 (R$)</label><input type="number" id="cfg_b1" class="form-input"></div>
-                <div class="form-group"><label>Km 1 (R$)</label><input type="number" id="cfg_k1" class="form-input"></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Band 2 (R$)</label><input type="number" id="cfg_b2" class="form-input"></div>
-                <div class="form-group"><label>Km 2 (R$)</label><input type="number" id="cfg_k2" class="form-input"></div>
-            </div>
-            <div class="form-group"><label>Preço Minuto (R$)</label><input type="number" id="cfg_min" class="form-input"></div>
-            
-            <hr style="border-color:#334155; margin:15px 0;">
-            <div class="form-group"><label style="color:var(--gold); font-weight:bold;">HORÁRIO AUTOMÁTICO</label></div>
-            <div class="form-row">
-                <div class="form-group"><label>Início B2 (H)</label><input type="number" id="cfg_hi" class="form-input"></div>
-                <div class="form-group"><label>Fim B2 (H)</label><input type="number" id="cfg_hf" class="form-input"></div>
-            </div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
-            <button class="btn-main btn-start" onclick="salvarConfig()">SALVAR</button>
-        </div>
-    </div>
+<script>
+    // --- FIREBASE INIT ---
+    const fbConfig = {
+        apiKey: "AIzaSyBzD2q7VWFM1jGqj-787M3AZV0_I9uFZ_s",
+        authDomain: "vaga-especial-ff7d3.firebaseapp.com",
+        databaseURL: "https://vaga-especial-ff7d3-default-rtdb.firebaseio.com",
+        projectId: "vaga-especial-ff7d3",
+        storageBucket: "vaga-especial-ff7d3.firebasestorage.app",
+        messagingSenderId: "220203379880",
+        appId: "1:220203379880:web:3ed69498dd1a7c3049e69d"
+    };
+    try { firebase.initializeApp(fbConfig); } catch(e){}
+    const db = firebase.database();
 
-    <div id="modalHist" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-header"><span class="modal-title">Histórico</span><button class="btn-close" onclick="fecharModal('modalHist')">×</button></div>
-            <div id="histList" style="flex:1; margin-bottom:10px;"></div>
-            <button class="btn-main btn-stop" onclick="limparHistorico()">LIMPAR TUDO</button>
-        </div>
-    </div>
+    // --- ESTADO DO APP ---
+    let state = {
+        rodando: false, pausado: false, flag: 1, manual: false,
+        dist: 0, tempo: 0, valor: 0,
+        driver: JSON.parse(localStorage.getItem('taxi_driver_x')) || null,
+        cfg: JSON.parse(localStorage.getItem('taxi_cfg_x')) || { b1:6, k1:3.5, b2:8, k2:4.5, min:0.5, hi:22, hf:6 }
+    };
+    let timer, watch, lastPos, map, routeCtrl;
 
-    <div id="modalAdmin" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-header"><span class="modal-title">Admin</span><button class="btn-close" onclick="fecharModal('modalAdmin')">×</button></div>
-            <div id="adminLogin">
-                <input type="password" id="adminPass" class="form-input" placeholder="Senha Mestra" style="text-align:center; margin-bottom:10px;">
-                <button class="btn-main btn-pause" onclick="loginAdmin()">ENTRAR</button>
-            </div>
-            <div id="adminPanel" style="display:none;">
-                <div id="driversList">Carregando...</div>
-            </div>
-        </div>
-    </div>
+    // --- INICIO ---
+    window.onload = () => {
+        checkDriver();
+        setInterval(updateClock, 1000);
+        setInterval(checkAutoFlag, 60000); // Check flag every min
+        checkAutoFlag();
+        updateUI();
+    };
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }
 
-    <script>
-        // === 1. CONFIG FIREBASE ===
-        const firebaseConfig = {
-            apiKey: "AIzaSyBzD2q7VWFM1jGqj-787M3AZV0_I9uFZ_s",
-            authDomain: "vaga-especial-ff7d3.firebaseapp.com",
-            databaseURL: "https://vaga-especial-ff7d3-default-rtdb.firebaseio.com",
-            projectId: "vaga-especial-ff7d3",
-            storageBucket: "vaga-especial-ff7d3.firebasestorage.app",
-            messagingSenderId: "220203379880",
-            appId: "1:220203379880:web:3ed69498dd1a7c3049e69d"
-        };
-        try { firebase.initializeApp(firebaseConfig); } catch(e){}
-        const db = firebase.database();
-
-        // === 2. DADOS ===
-        let config = JSON.parse(localStorage.getItem('taxi_cfg_final')) || { 
-            b1: 6.00, k1: 3.50, b2: 8.00, k2: 4.50, min: 0.50, hIni: 22, hFim: 6 
-        };
-        let driver = JSON.parse(localStorage.getItem('taxi_driver_final'));
-        let corrida = { rodando:false, pausado:false, flag:1, manual:false, dist:0, tempo:0, valor:0 };
-        let timer, watchId, lastPos, map, routeControl;
-
-        // === 3. INICIALIZAÇÃO ===
-        window.onload = function() {
-            verificarMotorista();
-            startClock();
-            verificarBandeiraAuto();
-            atualizarTela();
-            setInterval(verificarBandeiraAuto, 60000); // Checa horário todo minuto
-        };
-
-        function startClock() {
-            setInterval(() => {
-                document.getElementById('liveClock').innerText = new Date().toLocaleTimeString();
-            }, 1000);
+    async function checkDriver() {
+        if(!state.driver) {
+            const { value: d } = await Swal.fire({
+                title: 'Cadastro Motorista',
+                html: `<input id="sw-n" class="swal2-input" placeholder="Nome"><input id="sw-p" class="swal2-input" placeholder="Placa"><input id="sw-c" class="swal2-input" placeholder="Celular">`,
+                allowOutsideClick: false,
+                preConfirm: () => ({ name: document.getElementById('sw-n').value, plate: document.getElementById('sw-p').value, phone: document.getElementById('sw-c').value, id: Date.now() })
+            });
+            if(d) { state.driver = d; localStorage.setItem('taxi_driver_x', JSON.stringify(d)); db.ref('drivers/'+d.id).set(d); }
         }
+        if(state.driver) document.getElementById('driverDisplay').innerHTML = `Mot: <b>${state.driver.name}</b>`;
+    }
 
-        async function verificarMotorista() {
-            if(!driver) {
-                const { value: form } = await Swal.fire({
-                    title: 'Cadastro Único',
-                    html: `
-                        <input id="swal-name" class="swal2-input" placeholder="Seu Nome">
-                        <input id="swal-plate" class="swal2-input" placeholder="Placa do Carro">
-                        <input id="swal-cel" class="swal2-input" placeholder="Celular">
-                    `,
-                    allowOutsideClick: false,
-                    preConfirm: () => {
-                        return {
-                            name: document.getElementById('swal-name').value,
-                            plate: document.getElementById('swal-plate').value,
-                            phone: document.getElementById('swal-cel').value,
-                            id: Date.now()
-                        }
+    // --- LÓGICA DE TARIFAS ---
+    function checkAutoFlag() {
+        if(state.manual) return;
+        const h = new Date().getHours();
+        let isB2 = (state.cfg.hi > state.cfg.hf) ? (h >= state.cfg.hi || h < state.cfg.hf) : (h >= state.cfg.hi && h < state.cfg.hf);
+        setFlag(isB2 ? 2 : 1, true);
+    }
+
+    function manualFlag(n) {
+        if(document.getElementById('flagLock').style.display === 'block') return Swal.fire('Bloqueado', 'Horário Automático', 'warning');
+        state.manual = true; setFlag(n, false);
+    }
+
+    function setFlag(n, lock) {
+        state.flag = n;
+        document.getElementById('btnB1').className = n===1 ? 'f-btn active' : 'f-btn';
+        document.getElementById('btnB2').className = n===2 ? 'f-btn active2' : 'f-btn';
+        document.getElementById('flagLock').style.display = lock ? 'block' : 'none';
+        
+        // Visual Lock
+        const op = lock ? 0.5 : 1;
+        document.getElementById('btnB1').style.opacity = op;
+        document.getElementById('btnB2').style.opacity = op;
+
+        if(state.rodando) calcPrice();
+        else {
+            let base = n===1 ? state.cfg.b1 : state.cfg.b2;
+            document.getElementById('displayVal').innerText = `R$ ${base.toFixed(2)}`;
+        }
+    }
+
+    function calcPrice() {
+        // REGRA 1.5KM
+        let b = state.flag===1 ? state.cfg.b1 : state.cfg.b2;
+        let k = state.flag===1 ? state.cfg.k1 : state.cfg.k2;
+        
+        if(state.dist <= 1.5) {
+            state.valor = b;
+        } else {
+            let exc = state.dist - 1.5;
+            state.valor = b + (exc * k) + ((state.tempo/60) * state.cfg.min);
+        }
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('displayVal').innerText = `R$ ${state.valor.toFixed(2)}`;
+        document.getElementById('displayDist').innerText = state.dist.toFixed(1);
+        let m = Math.floor(state.tempo/60).toString().padStart(2,'0');
+        let s = (state.tempo%60).toString().padStart(2,'0');
+        document.getElementById('displayTime').innerText = `${m}:${s}`;
+    }
+
+    // --- CONTROLES ---
+    function iniciarCorrida() {
+        state.rodando = true; state.pausado = false; state.dist = 0; state.tempo = 0; state.manual = false;
+        checkAutoFlag();
+        document.getElementById('ctrl-start').style.display='none';
+        document.getElementById('ctrl-run').style.display='flex';
+
+        if(navigator.geolocation) {
+            watch = navigator.geolocation.watchPosition(p => {
+                if(state.rodando && !state.pausado) {
+                    if(lastPos) {
+                        let d = getDist(lastPos.coords.latitude, lastPos.coords.longitude, p.coords.latitude, p.coords.longitude);
+                        if(d > 0.005) { state.dist += d; calcPrice(); }
                     }
-                });
-                if(form) {
-                    driver = form;
-                    localStorage.setItem('taxi_driver_final', JSON.stringify(driver));
-                    db.ref('drivers/' + driver.id).set(driver);
+                    lastPos = p;
                 }
+            }, null, { enableHighAccuracy: true });
+        }
+        timer = setInterval(() => {
+            if(!state.pausado) { state.tempo++; calcPrice(); }
+        }, 1000);
+    }
+
+    function pausarCorrida() {
+        state.pausado = !state.pausado;
+        const btn = document.getElementById('btnPause');
+        btn.innerHTML = state.pausado ? '▶' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+        btn.style.background = state.pausado ? '#eab308' : '#334155';
+    }
+
+    function encerrarCorrida() {
+        clearInterval(timer); navigator.geolocation.clearWatch(watch);
+        state.rodando = false;
+        
+        const r = {
+            data: new Date().toLocaleString(),
+            val: state.valor.toFixed(2),
+            dist: state.dist.toFixed(2),
+            tempo: document.getElementById('displayTime').innerText,
+            flag: state.flag,
+            mot: state.driver.name
+        };
+        db.ref('taxi_rides').push(r);
+
+        Swal.fire({
+            title: 'Finalizado',
+            html: `<h1 style="color:#22c55e">R$ ${r.val}</h1><p>${r.dist}km | ${r.tempo}</p>`,
+            showCancelButton: true, confirmButtonText: 'Nova', cancelButtonText: 'Recibo'
+        }).then(res => {
+            if(res.dismiss === Swal.DismissReason.cancel) {
+                const t = `🚖 *Táxi ${r.mot}*\n💰 R$ ${r.val}\n🏁 ${r.dist}km\n⏱ ${r.tempo}`;
+                if(navigator.share) navigator.share({text:t});
             }
-            if(driver) {
-                document.getElementById('driverDisplay').innerHTML = `Mot: <b>${driver.name}</b>`;
+            document.getElementById('ctrl-start').style.display='block';
+            document.getElementById('ctrl-run').style.display='none';
+            checkAutoFlag();
+        });
+    }
+
+    // --- MODAIS E FUNCIONALIDADES ---
+    function openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+        if(id === 'mdlSim') initSim();
+    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    // AJUSTES
+    function abrirConfig() {
+        document.getElementById('c_b1').value = state.cfg.b1;
+        document.getElementById('c_k1').value = state.cfg.k1;
+        document.getElementById('c_b2').value = state.cfg.b2;
+        document.getElementById('c_k2').value = state.cfg.k2;
+        document.getElementById('c_min').value = state.cfg.min;
+        document.getElementById('c_hi').value = state.cfg.hi;
+        document.getElementById('c_hf').value = state.cfg.hf;
+        openModal('mdlConfig');
+    }
+    function salvarConfig() {
+        state.cfg = {
+            b1: parseFloat(document.getElementById('c_b1').value),
+            k1: parseFloat(document.getElementById('c_k1').value),
+            b2: parseFloat(document.getElementById('c_b2').value),
+            k2: parseFloat(document.getElementById('c_k2').value),
+            min: parseFloat(document.getElementById('c_min').value),
+            hi: parseInt(document.getElementById('c_hi').value),
+            hf: parseInt(document.getElementById('c_hf').value)
+        };
+        localStorage.setItem('taxi_cfg_x', JSON.stringify(state.cfg));
+        closeModal('mdlConfig');
+        checkAutoFlag();
+        Swal.fire('Salvo', '', 'success');
+    }
+
+    // SIMULADOR
+    function initSim() {
+        setTimeout(() => {
+            if(!map) {
+                map = L.map('map').setView([-21, -44], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                L.Control.geocoder({ defaultMarkGeocode: false, placeholder:'Destino...' })
+                .on('markgeocode', function(e) { calcRoute(e.geocode.center); }).addTo(map);
             }
-        }
-
-        // === 4. LÓGICA DE BANDEIRA E CORRIDA ===
-        function verificarBandeiraAuto() {
-            if(corrida.manual) return;
-            const h = new Date().getHours();
-            let isB2 = false;
-            if(config.hIni > config.hFim) isB2 = (h >= config.hIni || h < config.hFim);
-            else isB2 = (h >= config.hIni && h < config.hFim);
-            
-            aplicarBandeira(isB2 ? 2 : 1, true);
-        }
-
-        function mudarBandeira(n) {
-            const lock = document.getElementById('flagLockText');
-            if(lock.style.display === 'block') return Swal.fire('Bloqueado', 'Horário Automático Ativo', 'warning');
-            corrida.manual = true;
-            aplicarBandeira(n, false);
-        }
-
-        function aplicarBandeira(n, auto) {
-            corrida.flag = n;
-            document.getElementById('btnFlag1').className = n===1 ? 'flag-btn active' : 'flag-btn';
-            document.getElementById('btnFlag2').className = n===2 ? 'flag-btn active2' : 'flag-btn';
-            
-            const lock = document.getElementById('flagLockText');
-            if(auto) {
-                lock.style.display = 'block';
-                document.getElementById('btnFlag1').style.opacity = '0.5';
-                document.getElementById('btnFlag2').style.opacity = '0.5';
-            } else {
-                lock.style.display = 'none';
-                document.getElementById('btnFlag1').style.opacity = '1';
-                document.getElementById('btnFlag2').style.opacity = '1';
-            }
-            if(corrida.rodando) calcularPreco();
-            else {
-                // Se parado, mostra a bandeirada inicial
-                let b = n===1 ? config.b1 : config.b2;
-                document.getElementById('displayPrice').innerText = `R$ ${b.toFixed(2)}`;
-            }
-        }
-
-        function calcularPreco() {
-            let base = corrida.flag === 1 ? config.b1 : config.b2;
-            let pKm = corrida.flag === 1 ? config.k1 : config.k2;
-            
-            // REGRA 1.5 KM
-            if(corrida.dist <= 1.5) {
-                corrida.valor = base;
-            } else {
-                let exc = corrida.dist - 1.5;
-                let custoKm = exc * pKm;
-                let custoTempo = (corrida.tempo / 60) * config.min;
-                corrida.valor = base + custoKm + custoTempo;
-            }
-            atualizarTela();
-        }
-
-        function atualizarTela() {
-            document.getElementById('displayPrice').innerText = `R$ ${corrida.valor.toFixed(2)}`;
-            document.getElementById('displayDist').innerText = corrida.dist.toFixed(1);
-            
-            let m = Math.floor(corrida.tempo / 60).toString().padStart(2,'0');
-            let s = (corrida.tempo % 60).toString().padStart(2,'0');
-            document.getElementById('displayTime').innerText = `${m}:${s}`;
-        }
-
-        function iniciarCorrida() {
-            corrida.rodando = true; corrida.pausado = false;
-            corrida.dist = 0; corrida.tempo = 0; corrida.manual = false;
-            
-            verificarBandeiraAuto(); // Reseta para auto ao iniciar
-            
-            document.getElementById('boxStart').style.display = 'none';
-            document.getElementById('boxRunning').style.display = 'flex';
-            
-            if(navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(pos => {
-                    if(corrida.rodando && !corrida.pausado) {
-                        if(lastPos) {
-                            let d = calcDist(lastPos.coords.latitude, lastPos.coords.longitude, pos.coords.latitude, pos.coords.longitude);
-                            if(d > 0.005) { // 5 metros
-                                corrida.dist += d;
-                                calcularPreco();
-                            }
-                        }
-                        lastPos = pos;
-                    }
-                }, null, { enableHighAccuracy: true });
-            }
-            
-            timer = setInterval(() => {
-                if(!corrida.pausado) {
-                    corrida.tempo++;
-                    calcularPreco();
-                }
-            }, 1000);
-        }
-
-        function pausarCorrida() {
-            corrida.pausado = !corrida.pausado;
-            const btn = document.getElementById('btnPauseIcon');
-            btn.innerHTML = corrida.pausado ? '▶' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
-            btn.style.background = corrida.pausado ? '#eab308' : '#334155';
-        }
-
-        function encerrarCorrida() {
-            clearInterval(timer);
-            navigator.geolocation.clearWatch(watchId);
-            corrida.rodando = false;
-
-            const dados = {
-                data: new Date().toLocaleString(),
-                val: corrida.valor.toFixed(2),
-                dist: corrida.dist.toFixed(2),
-                tempo: document.getElementById('displayTime').innerText,
-                flag: corrida.flag,
-                mot: driver.name,
-                dest: 'Rota GPS'
-            };
-            db.ref('taxi_rides').push(dados);
-
-            Swal.fire({
-                title: 'Corrida Finalizada',
-                html: `<h1 style="color:#22c55e">R$ ${dados.val}</h1><p>${dados.dist}km | ${dados.tempo}</p>`,
-                showCancelButton: true, confirmButtonText: 'Nova Corrida', cancelButtonText: 'Recibo', cancelButtonColor: '#3b82f6'
-            }).then((res) => {
-                if(res.dismiss === Swal.DismissReason.cancel) {
-                    const txt = `🚖 *Táxi ${driver.name}*\n💰 Valor: R$ ${dados.val}\n🏁 Dist: ${dados.dist}km\n⏱ Tempo: ${dados.tempo}`;
-                    if(navigator.share) navigator.share({text:txt});
-                }
-                document.getElementById('boxStart').style.display = 'block';
-                document.getElementById('boxRunning').style.display = 'none';
-                corrida.dist = 0; corrida.tempo = 0; corrida.valor = 0;
-                verificarBandeiraAuto(); // Reseta visual
+            map.invalidateSize();
+            navigator.geolocation.getCurrentPosition(p => {
+                const me = [p.coords.latitude, p.coords.longitude];
+                map.setView(me, 14); map.myPos = me;
+                L.marker(me).addTo(map).bindPopup('Eu').openPopup();
             });
-        }
-
-        // === 5. AJUSTES ===
-        function abrirConfig() {
-            document.getElementById('cfg_b1').value = config.b1;
-            document.getElementById('cfg_k1').value = config.k1;
-            document.getElementById('cfg_b2').value = config.b2;
-            document.getElementById('cfg_k2').value = config.k2;
-            document.getElementById('cfg_min').value = config.min;
-            document.getElementById('cfg_hi').value = config.hIni;
-            document.getElementById('cfg_hf').value = config.hFim;
-            abrirModal('modalConfig');
-        }
-
-        function salvarConfig() {
-            config.b1 = parseFloat(document.getElementById('cfg_b1').value);
-            config.k1 = parseFloat(document.getElementById('cfg_k1').value);
-            config.b2 = parseFloat(document.getElementById('cfg_b2').value);
-            config.k2 = parseFloat(document.getElementById('cfg_k2').value);
-            config.min = parseFloat(document.getElementById('cfg_min').value);
-            config.hIni = parseInt(document.getElementById('cfg_hi').value);
-            config.hFim = parseInt(document.getElementById('cfg_hf').value);
+        }, 300);
+    }
+    function calcRoute(dest) {
+        if(!map.myPos) return;
+        if(routeCtrl) map.removeControl(routeCtrl);
+        routeCtrl = L.Routing.control({
+            waypoints: [ L.latLng(map.myPos), dest ],
+            createMarker: () => null, show: false
+        }).on('routesfound', e => {
+            const d = e.routes[0].summary.totalDistance / 1000;
+            const t = e.routes[0].summary.totalTime / 60;
             
-            localStorage.setItem('taxi_cfg_final', JSON.stringify(config));
-            fecharModal('modalConfig');
-            verificarBandeiraAuto();
-            Swal.fire('Salvo!', '', 'success');
-        }
+            let b = state.flag===1 ? state.cfg.b1 : state.cfg.b2;
+            let k = state.flag===1 ? state.cfg.k1 : state.cfg.k2;
+            let tot = b;
+            if(d > 1.5) tot += (d-1.5)*k;
+            tot += t * state.cfg.min;
 
-        // === 6. MAPA SIMULADOR ===
-        function abrirModal(id) { 
-            document.getElementById(id).style.display = 'flex'; 
-            if(id === 'modalSim') initMap();
-        }
-        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+            document.getElementById('simPrice').innerText = `R$ ${tot.toFixed(2)}`;
+            document.getElementById('simInfo').innerText = `${d.toFixed(1)} km | ${t.toFixed(0)} min`;
+        }).addTo(map);
+    }
 
-        function initMap() {
-            setTimeout(() => {
-                if(!map) {
-                    map = L.map('simMap').setView([-21.13, -44.26], 13);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                    
-                    L.Control.geocoder({ defaultMarkGeocode: false, placeholder: "Buscar destino..." })
-                    .on('markgeocode', function(e) {
-                        const dest = e.geocode.center;
-                        traçarRota(dest);
-                    }).addTo(map);
-                }
-                map.invalidateSize();
-                navigator.geolocation.getCurrentPosition(p => {
-                    const me = [p.coords.latitude, p.coords.longitude];
-                    map.setView(me, 14);
-                    map.myPos = me;
-                    L.marker(me).addTo(map).bindPopup('Você').openPopup();
-                });
-            }, 300);
-        }
-
-        function traçarRota(dest) {
-            if(!map.myPos) return;
-            if(routeControl) map.removeControl(routeControl);
-            
-            routeControl = L.Routing.control({
-                waypoints: [ L.latLng(map.myPos), dest ],
-                createMarker: function() { return null; }, show: false
-            }).on('routesfound', function(e) {
-                const dist = e.routes[0].summary.totalDistance / 1000;
-                const time = e.routes[0].summary.totalTime / 60;
-                
-                // Simula Regra 1.5km
-                let base = corrida.flag === 1 ? config.b1 : config.b2;
-                let k = corrida.flag === 1 ? config.k1 : config.k2;
-                let total = base;
-                
-                if(dist > 1.5) total += (dist - 1.5) * k;
-                total += time * config.min;
-                
-                document.getElementById('simPrice').innerText = `R$ ${total.toFixed(2)}`;
-                document.getElementById('simDist').innerText = `${dist.toFixed(1)} km | ${time.toFixed(0)} min`;
-            }).addTo(map);
-        }
-
-        // === 7. ADMIN & HISTORICO ===
-        function loginAdmin() {
-            if(document.getElementById('adminPass').value === 'sjdr2025') {
-                document.getElementById('adminLogin').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                carregarDrivers();
-            } else Swal.fire('Erro', 'Senha inválida', 'error');
-        }
-
-        function carregarDrivers() {
-            db.ref('drivers').once('value').then(snap => {
-                let h = '';
-                snap.forEach(c => {
-                    let d = c.val();
-                    h += `<div style="background:#0f172a; padding:10px; margin-bottom:5px; display:flex; justify-content:space-between;"><div><b>${d.name}</b><br><small>${d.placa}</small></div><button onclick="delDriver(${d.id})" style="color:red; background:none; border:none;">BLOQ</button></div>`;
-                });
-                document.getElementById('driversList').innerHTML = h || 'Nenhum';
+    // HISTORICO
+    function carregarHistorico() {
+        openModal('mdlHist');
+        db.ref('taxi_rides').limitToLast(20).once('value').then(s => {
+            let h = '';
+            let a = []; s.forEach(c => a.push(c.val()));
+            a.reverse().forEach(r => {
+                h += `<div style="background:rgba(255,255,255,0.05); padding:10px; margin-bottom:5px; border-radius:8px;">
+                    <div style="display:flex; justify-content:space-between;"><b>R$ ${r.val}</b> <small>${r.data}</small></div>
+                    <small style="color:#aaa">${r.dist}km | ${r.tempo}</small>
+                </div>`;
             });
-        }
-        function delDriver(id) { if(confirm('Bloquear?')) { db.ref('drivers/'+id).remove(); carregarDrivers(); } }
+            document.getElementById('histContent').innerHTML = h || 'Vazio';
+        });
+    }
+    function limparHistorico() { if(confirm('Apagar?')) { db.ref('taxi_rides').remove(); document.getElementById('histContent').innerHTML=''; } }
 
-        function carregarHistorico() {
-            abrirModal('modalHist');
-            db.ref('taxi_rides').limitToLast(20).once('value').then(snap => {
-                let h = '';
-                let arr = [];
-                snap.forEach(c => arr.push(c.val()));
-                arr.reverse().forEach(r => {
-                    h += `<div style="background:#0f172a; padding:10px; margin-bottom:5px; border-left:3px solid var(--primary);">
-                        <div style="display:flex; justify-content:space-between;"><b>R$ ${r.val}</b> <small>${r.data}</small></div>
-                        <small style="color:#aaa">${r.dist}km | ${r.tempo} | ${r.mot}</small>
-                    </div>`;
-                });
-                document.getElementById('histList').innerHTML = h || 'Vazio';
-            });
-        }
-        function limparHistorico() { if(confirm('Apagar tudo?')) { db.ref('taxi_rides').remove(); document.getElementById('histList').innerHTML=''; }}
-        function shareApp() { if(navigator.share) navigator.share({title:'TaxiPro', url:window.location.href}); }
-        function calcDist(lat1, lon1, lat2, lon2) { const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180; const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2); return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
-
-    </script>
+    // ADMIN
+    function loginAdmin() {
+        if(document.getElementById('adminPass').value === 'sjdr2025') {
+            document.getElementById('adminLogin').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadDrivers();
+        } else Swal.fire('Erro', 'Senha', 'error');
+    }
+    function loadDrivers() {
+        db.ref('drivers').once('value').then(s => {
+            let h = ''; s.forEach(c => { let d=c.val(); h+= `<div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;"><div><b>${d.name}</b><br><small>${d.plate}</small></div><button onclick="delD(${d.id})" style="color:red; background:none; border:none;">X</button></div>`; });
+            document.getElementById('driverList').innerHTML = h || 'Nenhum';
+        });
+    }
+    function delD(id) { if(confirm('Bloquear?')) { db.ref('drivers/'+id).remove(); loadDrivers(); }}
+    
+    function shareApp() { if(navigator.share) navigator.share({title:'TaxiX', url:window.location.href}); }
+    function getDist(lat1, lon1, lat2, lon2) { const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180; const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2); return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
+</script>
 </body>
 </html>
