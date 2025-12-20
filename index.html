@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Taxímetro Pro Final</title>
+    <title>Taxímetro V13 Final</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
@@ -15,76 +15,77 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        /* --- RESET GERAL E ESTRUTURA BLINDADA --- */
+        /* --- RESET E LAYOUT --- */
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
         
         body {
-            margin: 0; padding: 0;
-            width: 100%; height: 100vh; /* Altura total da tela */
+            margin: 0; padding: 0; width: 100%; height: 100vh;
             background-color: #121212; color: white;
             font-family: 'Roboto', sans-serif;
-            display: flex; flex-direction: column; /* Organiza em coluna: Topo, Meio, Fundo */
-            overflow: hidden; /* Impede rolagem da tela inteira */
+            display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* 1. CABEÇALHO (FIXO NO TOPO) */
+        /* 1. TOPO */
         header {
-            height: 60px; flex-shrink: 0;
-            background: #1e1e1e; border-bottom: 1px solid #333;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 15px; z-index: 10;
+            height: 60px; flex-shrink: 0; background: #1e1e1e; border-bottom: 1px solid #333;
+            display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10;
         }
-        .logo { font-weight: 900; font-size: 1.2rem; color: #fff; }
-        .logo span { color: #00e676; }
+        .logo { font-weight: 900; font-size: 1.2rem; } .logo span { color: #00e676; }
         .info-top { text-align: right; font-size: 0.75rem; color: #aaa; }
         .relogio { color: #29b6f6; font-weight: bold; font-size: 0.9rem; }
 
-        /* 2. ÁREA DO MOSTRADOR (OCUPA O ESPAÇO QUE SOBRA) */
+        /* 2. MOSTRADOR */
         main {
-            flex-grow: 1; /* Estica para preencher o meio */
-            background: #121212;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            flex-grow: 1; background: #121212;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             position: relative;
         }
-
         .valor-titulo { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-        .valor-grande { font-size: 4.5rem; font-weight: 900; color: #00e676; margin: 0; line-height: 1; }
+        .valor-grande { font-size: 4.5rem; font-weight: 900; color: #00e676; line-height: 1; }
         
-        /* Botões de Bandeira */
+        /* Bandeiras */
         .box-bandeira { display: flex; gap: 10px; margin-top: 20px; background: #222; padding: 5px; border-radius: 30px; }
-        .btn-band { 
-            background: transparent; border: none; color: #777; padding: 10px 20px; 
-            border-radius: 25px; font-weight: bold; font-size: 0.8rem; cursor: pointer; 
-        }
+        .btn-band { background: transparent; border: none; color: #777; padding: 10px 20px; border-radius: 25px; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
         .btn-band.ativo { background: #00e676; color: #000; box-shadow: 0 0 10px rgba(0,230,118,0.4); }
         .btn-band.ativo2 { background: #ffea00; color: #000; box-shadow: 0 0 10px rgba(255,234,0,0.4); }
         .aviso-lock { font-size: 0.7rem; color: #ffea00; margin-top: 5px; display: none; }
 
+        /* Cards Info */
         .info-cards { display: flex; gap: 15px; margin-top: 30px; width: 90%; justify-content: center; }
         .card { background: #1e1e1e; padding: 15px; border-radius: 10px; text-align: center; flex: 1; border: 1px solid #333; }
         .card-val { font-size: 1.2rem; font-weight: bold; }
         .card-lbl { font-size: 0.6rem; color: #888; text-transform: uppercase; margin-top: 5px; }
 
-        /* 3. BOTÕES DE AÇÃO (FIXO ACIMA DO MENU) */
+        /* 3. BOTÕES DE AÇÃO (LAYOUT NOVO) */
         .area-botoes {
-            padding: 15px; flex-shrink: 0;
-            background: #121212;
+            padding: 15px; flex-shrink: 0; background: #121212;
+            display: flex; align-items: center; gap: 10px;
         }
+        
+        /* Botão Principal (Inicia/Encerra) */
         .btn-zao {
-            width: 100%; padding: 18px; border: none; border-radius: 12px;
-            font-size: 1.1rem; font-weight: 900; text-transform: uppercase; color: white;
+            flex: 1; padding: 18px; border: none; border-radius: 12px;
+            font-size: 1.2rem; font-weight: 900; text-transform: uppercase; color: white;
             cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: 0.2s;
         }
         .verde { background: #00c853; box-shadow: 0 4px 0 #009624; }
         .vermelho { background: #d50000; box-shadow: 0 4px 0 #9b0000; }
-        .cinza { background: #37474f; color: #eceff1; flex: 1; margin-right: 10px; box-shadow: 0 4px 0 #263238; }
         .btn-zao:active { transform: translateY(2px); box-shadow: none; }
 
-        /* 4. MENU INFERIOR (DOCK FIXO) */
+        /* Botão Pausa Pequeno */
+        .btn-mini {
+            width: 60px; height: 60px; border-radius: 12px; border: none;
+            background: #37474f; color: #fff; font-size: 1.5rem;
+            cursor: pointer; display: none; align-items: center; justify-content: center;
+            box-shadow: 0 4px 0 #263238;
+        }
+        .btn-mini:active { transform: translateY(2px); box-shadow: none; }
+        .amarelo { background: #ffea00; color: #000; box-shadow: 0 4px 0 #fbc02d; }
+
+        /* 4. MENU INFERIOR */
         footer {
-            height: 70px; flex-shrink: 0;
-            background: #1e1e1e; border-top: 1px solid #333;
+            height: 70px; flex-shrink: 0; background: #1e1e1e; border-top: 1px solid #333;
             display: grid; grid-template-columns: repeat(5, 1fr);
         }
         .menu-btn {
@@ -115,11 +116,14 @@
         .config-item { flex: 1; }
         .config-item label { display: block; font-size: 0.7rem; color: #aaa; margin-bottom: 5px; }
         .config-item input { width: 100%; padding: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 5px; text-align: center; font-size: 1rem; }
+        
+        /* Checkbox Switch */
+        .switch-box { display: flex; align-items: center; justify-content: space-between; background: #111; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #444; }
+        .switch-box input { transform: scale(1.5); accent-color: #00e676; }
 
         /* MAPA */
         .mapa-container { width: 100%; height: 300px; background: #333; border-radius: 10px; margin-bottom: 10px; }
-        .leaflet-control-geocoder { width: 100%; }
-        .leaflet-control-geocoder input { color: black; }
+        .leaflet-control-geocoder { width: 100%; } .leaflet-control-geocoder input { color: black; }
 
     </style>
 </head>
@@ -158,60 +162,48 @@
     </main>
 
     <div class="area-botoes">
-        <div id="painelInicio">
-            <button class="btn-zao verde" onclick="iniciarCorrida()">
-                INICIAR CORRIDA
-            </button>
-        </div>
-        <div id="painelRodando" style="display:none; display:flex;">
-            <button class="btn-zao cinza" id="btnPausa" onclick="pausarCorrida()">
-                PAUSAR
-            </button>
-            <button class="btn-zao vermelho" style="flex:2;" onclick="pararCorrida()">
-                ENCERRAR
-            </button>
-        </div>
+        <button class="btn-mini" id="btnPausa" onclick="pausarCorrida()">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
+        
+        <button class="btn-zao verde" id="btnPrincipal" onclick="acaoPrincipal()">
+            INICIAR CORRIDA
+        </button>
     </div>
 
     <footer>
-        <button class="menu-btn" onclick="abrirSimulador()">
-            <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
-            Simular
-        </button>
-        <button class="menu-btn" onclick="abrirHistorico()">
-            <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-            Histórico
-        </button>
-        <button class="menu-btn" onclick="compartilhar()">
-            <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
-            App
-        </button>
-        <button class="menu-btn" onclick="abrirAjustes()">
-            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58z"/></svg>
-            Ajustes
-        </button>
-        <button class="menu-btn" onclick="abrirAdmin()">
-            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-            Admin
-        </button>
+        <button class="menu-btn" onclick="abrirSimulador()"><svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>Simular</button>
+        <button class="menu-btn" onclick="abrirHistorico()"><svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>Histórico</button>
+        <button class="menu-btn" onclick="compartilhar()"><svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>App</button>
+        <button class="menu-btn" onclick="abrirAjustes()"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58z"/></svg>Ajustes</button>
+        <button class="menu-btn" onclick="abrirAdmin()"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>Admin</button>
     </footer>
 
     <div id="modAjustes" class="modal-fundo">
         <div class="modal-janela">
             <div class="modal-topo"><span class="modal-titulo">Configurar Tarifas</span><button class="fechar" onclick="fecharModal('modAjustes')">×</button></div>
             
+            <div class="switch-box">
+                <label style="color:#fff; font-size:0.9rem;">Mudar Bandeira Automático?</label>
+                <input type="checkbox" id="check_auto">
+            </div>
+
             <div class="config-linha">
-                <div class="config-item"><label>Bandeirada 1 (R$)</label><input type="number" id="inp_b1"></div>
+                <div class="config-item"><label>Band 1 (R$)</label><input type="number" id="inp_b1"></div>
                 <div class="config-item"><label>Km 1 (R$)</label><input type="number" id="inp_k1"></div>
             </div>
+            <div class="config-item" style="margin-bottom:15px;"><label>Minuto Band 1 (R$)</label><input type="number" id="inp_m1"></div>
+
+            <hr style="border-color:#333; margin:10px 0;">
+
             <div class="config-linha">
-                <div class="config-item"><label>Bandeirada 2 (R$)</label><input type="number" id="inp_b2"></div>
+                <div class="config-item"><label>Band 2 (R$)</label><input type="number" id="inp_b2"></div>
                 <div class="config-item"><label>Km 2 (R$)</label><input type="number" id="inp_k2"></div>
             </div>
-            <div class="config-item"><label>Minuto Parado (R$)</label><input type="number" id="inp_min"></div>
+            <div class="config-item" style="margin-bottom:15px;"><label>Minuto Band 2 (R$)</label><input type="number" id="inp_m2"></div>
             
-            <hr style="border-color:#333; margin:15px 0;">
-            <div style="color:#ffea00; font-size:0.8rem; margin-bottom:5px; font-weight:bold;">HORÁRIO AUTOMÁTICO (Bandeira 2)</div>
+            <hr style="border-color:#333; margin:10px 0;">
+            <div style="color:#ffea00; font-size:0.7rem; margin-bottom:5px; font-weight:bold;">HORÁRIO AUTO (Se ativado)</div>
             <div class="config-linha">
                 <div class="config-item"><label>Início (Hora)</label><input type="number" id="inp_h1"></div>
                 <div class="config-item"><label>Fim (Hora)</label><input type="number" id="inp_h2"></div>
@@ -226,9 +218,9 @@
             <div class="modal-topo"><span class="modal-titulo">Simulador</span><button class="fechar" onclick="fecharModal('modSim')">×</button></div>
             <div id="mapaSim" class="mapa-container"></div>
             <div style="text-align:center; background:#111; padding:10px; border-radius:10px;">
-                <div style="font-size:0.7rem; color:#aaa;">ESTIMATIVA</div>
+                <div style="font-size:0.7rem; color:#aaa;">ESTIMATIVA (Bandeira Atual)</div>
                 <div id="simValor" style="font-size:1.8rem; font-weight:bold; color:#00e676;">R$ 0,00</div>
-                <div id="simDist" style="color:#fff;">0 km</div>
+                <div id="simDist" style="color:#fff;">0 km | 0 min</div>
             </div>
         </div>
     </div>
@@ -259,7 +251,7 @@
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
     <script>
-        // CONFIG FIREBASE
+        // FIREBASE
         const fbCfg = {
             apiKey: "AIzaSyBzD2q7VWFM1jGqj-787M3AZV0_I9uFZ_s",
             authDomain: "vaga-especial-ff7d3.firebaseapp.com",
@@ -272,13 +264,16 @@
         if(!firebase.apps.length) firebase.initializeApp(fbCfg);
         const db = firebase.database();
 
-        // ESTADO
-        let configs = JSON.parse(localStorage.getItem('taxi_cfg_real')) || { b1:6, k1:3.5, b2:8, k2:4.5, min:0.5, h1:22, h2:6 };
-        let driver = JSON.parse(localStorage.getItem('taxi_driver_real'));
+        // VARIAVEIS
+        let configs = JSON.parse(localStorage.getItem('taxi_cfg_13')) || { 
+            b1:6, k1:3.5, m1:0.5, 
+            b2:8, k2:4.5, m2:0.8,
+            h1:22, h2:6, auto:true 
+        };
+        let driver = JSON.parse(localStorage.getItem('taxi_driver_13'));
         let corrida = { on:false, pause:false, dist:0, tempo:0, valor:0, flag:1, manual:false };
         let timer, watch, lastPos, mapSim, rotaCtrl;
 
-        // INICIO
         window.onload = () => {
             verificarDriver();
             setInterval(() => { document.getElementById('relogio').innerText = new Date().toLocaleTimeString(); }, 1000);
@@ -290,29 +285,30 @@
         async function verificarDriver() {
             if(!driver) {
                 const {value:d} = await Swal.fire({
-                    title:'Cadastro Motorista',
+                    title:'Cadastro',
                     html: `<input id="sw_n" placeholder="Nome" class="swal2-input"><input id="sw_p" placeholder="Placa" class="swal2-input"><input id="sw_c" placeholder="Celular" class="swal2-input">`,
                     allowOutsideClick: false,
                     preConfirm: () => ({ name: document.getElementById('sw_n').value, plate: document.getElementById('sw_p').value, phone: document.getElementById('sw_c').value, id: Date.now() })
                 });
-                if(d) { driver = d; localStorage.setItem('taxi_driver_real', JSON.stringify(d)); db.ref('drivers/'+d.id).set(d); }
+                if(d) { driver = d; localStorage.setItem('taxi_driver_13', JSON.stringify(d)); db.ref('drivers/'+d.id).set(d); }
             }
             if(driver) document.getElementById('motoNome').innerText = `Mot: ${driver.name}`;
         }
 
-        // --- BANDEIRA AUTOMATICA ---
+        // --- BANDEIRA ---
         function checkFlagAuto() {
-            if(corrida.manual) return;
+            if(corrida.manual || !configs.auto) return;
             const h = new Date().getHours();
             let isB2 = false;
             if(configs.h1 > configs.h2) isB2 = (h >= configs.h1 || h < configs.h2);
             else isB2 = (h >= configs.h1 && h < configs.h2);
-            
             aplicarFlag(isB2 ? 2 : 1, true);
         }
 
         function mudarBandeira(n) {
-            if(document.getElementById('avisoAuto').style.display === 'block') return Swal.fire('Bloqueado', 'Horário Automático Ativo', 'warning');
+            if(configs.auto && !corrida.manual && document.getElementById('avisoAuto').style.display === 'block') {
+                return Swal.fire('Automático Ativo', 'Desative nas configurações para mudar manual.', 'info');
+            }
             corrida.manual = true;
             aplicarFlag(n, false);
         }
@@ -323,15 +319,8 @@
             document.getElementById('btnB2').className = n===2 ? 'btn-band ativo2' : 'btn-band';
             
             const aviso = document.getElementById('avisoAuto');
-            if(auto) {
-                aviso.style.display = 'block';
-                document.getElementById('btnB1').style.opacity = '0.5';
-                document.getElementById('btnB2').style.opacity = '0.5';
-            } else {
-                aviso.style.display = 'none';
-                document.getElementById('btnB1').style.opacity = '1';
-                document.getElementById('btnB2').style.opacity = '1';
-            }
+            aviso.style.display = (auto && configs.auto) ? 'block' : 'none';
+            
             if(corrida.on) calcular();
             else {
                 let base = n===1 ? configs.b1 : configs.b2;
@@ -339,16 +328,17 @@
             }
         }
 
-        // --- CALCULO REGRA 1.5KM ---
+        // --- CALCULO ---
         function calcular() {
             let base = corrida.flag===1 ? configs.b1 : configs.b2;
             let kmP = corrida.flag===1 ? configs.k1 : configs.k2;
+            let minP = corrida.flag===1 ? configs.m1 : configs.m2;
             
             if(corrida.dist <= 1.5) {
                 corrida.valor = base;
             } else {
                 let exc = corrida.dist - 1.5;
-                corrida.valor = base + (exc * kmP) + ((corrida.tempo/60) * configs.min);
+                corrida.valor = base + (exc * kmP) + ((corrida.tempo/60) * minP);
             }
             updateTela();
         }
@@ -361,71 +351,92 @@
             document.getElementById('displayTempo').innerText = `${m}:${s}`;
         }
 
-        // --- ACOES ---
-        function iniciarCorrida() {
-            corrida.on = true; corrida.pause = false; corrida.dist = 0; corrida.tempo = 0; corrida.manual = false;
-            checkFlagAuto();
-            document.getElementById('painelInicio').style.display='none';
-            document.getElementById('painelRodando').style.display='flex';
-            
-            if(navigator.geolocation) {
-                watch = navigator.geolocation.watchPosition(p => {
-                    if(corrida.on && !corrida.pause) {
-                        if(lastPos) {
-                            let d = getD(lastPos.coords.latitude, lastPos.coords.longitude, p.coords.latitude, p.coords.longitude);
-                            if(d > 0.005) { corrida.dist += d; calcular(); }
+        // --- AÇÃO PRINCIPAL ---
+        function acaoPrincipal() {
+            if(!corrida.on) {
+                // INICIAR
+                corrida.on = true; corrida.pause = false; corrida.dist = 0; corrida.tempo = 0; corrida.manual = false;
+                checkFlagAuto();
+                
+                // Mudar Botão
+                const btn = document.getElementById('btnPrincipal');
+                btn.innerText = "ENCERRAR CORRIDA";
+                btn.className = "btn-zao vermelho";
+                document.getElementById('btnPausa').style.display = 'flex';
+                
+                // GPS
+                if(navigator.geolocation) {
+                    watch = navigator.geolocation.watchPosition(p => {
+                        if(corrida.on && !corrida.pause) {
+                            if(lastPos) {
+                                let d = getD(lastPos.coords.latitude, lastPos.coords.longitude, p.coords.latitude, p.coords.longitude);
+                                if(d > 0.005) { corrida.dist += d; calcular(); }
+                            }
+                            lastPos = p;
                         }
-                        lastPos = p;
+                    }, null, { enableHighAccuracy: true });
+                }
+                timer = setInterval(() => { if(!corrida.pause) { corrida.tempo++; calcular(); } }, 1000);
+
+            } else {
+                // ENCERRAR
+                clearInterval(timer); navigator.geolocation.clearWatch(watch);
+                corrida.on = false;
+                
+                const r = { data: new Date().toLocaleString(), val: corrida.valor.toFixed(2), dist: corrida.dist.toFixed(2), tempo: document.getElementById('displayTempo').innerText, flag: corrida.flag, mot: driver.name };
+                db.ref('taxi_rides').push(r);
+
+                Swal.fire({
+                    title: 'Fim de Corrida',
+                    html: `<h1 style="color:#00e676">R$ ${r.val}</h1><p>${r.dist}km | ${r.tempo}</p>`,
+                    showCancelButton: true, confirmButtonText: 'Nova Corrida', cancelButtonText: 'Recibo'
+                }).then(res => {
+                    if(res.dismiss === Swal.DismissReason.cancel) {
+                        const txt = `🚖 TÁXI ${r.mot}\n💰 R$ ${r.val}\n🏁 ${r.dist}km\n⏱ ${r.tempo}`;
+                        if(navigator.share) navigator.share({text:txt});
                     }
-                }, null, { enableHighAccuracy: true });
+                    // Resetar Botão
+                    const btn = document.getElementById('btnPrincipal');
+                    btn.innerText = "INICIAR CORRIDA";
+                    btn.className = "btn-zao verde";
+                    document.getElementById('btnPausa').style.display = 'none';
+                    document.getElementById('btnPausa').innerHTML = '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+                    document.getElementById('btnPausa').className = "btn-mini"; // volta ao normal
+                    
+                    corrida.valor = 0; corrida.dist = 0; corrida.tempo = 0;
+                    checkFlagAuto();
+                });
             }
-            timer = setInterval(() => { if(!corrida.pause) { corrida.tempo++; calcular(); } }, 1000);
         }
 
         function pausarCorrida() {
             corrida.pause = !corrida.pause;
-            document.getElementById('btnPausa').innerText = corrida.pause ? 'CONTINUAR' : 'PAUSAR';
-        }
-
-        function pararCorrida() {
-            clearInterval(timer); navigator.geolocation.clearWatch(watch);
-            corrida.on = false;
-            
-            const r = { data: new Date().toLocaleString(), val: corrida.valor.toFixed(2), dist: corrida.dist.toFixed(2), tempo: document.getElementById('displayTempo').innerText, flag: corrida.flag, mot: driver.name };
-            db.ref('taxi_rides').push(r);
-
-            Swal.fire({
-                title: 'Fim de Corrida',
-                html: `<h1 style="color:#00e676">R$ ${r.val}</h1><p>${r.dist}km | ${r.tempo}</p>`,
-                showCancelButton: true, confirmButtonText: 'Nova', cancelButtonText: 'Recibo'
-            }).then(res => {
-                if(res.dismiss === Swal.DismissReason.cancel) {
-                    const txt = `🚖 TÁXI ${r.mot}\n💰 R$ ${r.val}\n🏁 ${r.dist}km\n⏱ ${r.tempo}`;
-                    if(navigator.share) navigator.share({text:txt});
-                }
-                document.getElementById('painelInicio').style.display='block';
-                document.getElementById('painelRodando').style.display='none';
-                corrida.valor = 0; corrida.dist = 0; corrida.tempo = 0;
-                checkFlagAuto();
-            });
+            const btn = document.getElementById('btnPausa');
+            if(corrida.pause) {
+                btn.innerHTML = '▶';
+                btn.className = "btn-mini amarelo";
+            } else {
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+                btn.className = "btn-mini";
+            }
         }
 
         // --- AJUSTES ---
         function abrirAjustes() {
-            document.getElementById('inp_b1').value = configs.b1; document.getElementById('inp_k1').value = configs.k1;
-            document.getElementById('inp_b2').value = configs.b2; document.getElementById('inp_k2').value = configs.k2;
-            document.getElementById('inp_min').value = configs.min;
+            document.getElementById('check_auto').checked = configs.auto;
+            document.getElementById('inp_b1').value = configs.b1; document.getElementById('inp_k1').value = configs.k1; document.getElementById('inp_m1').value = configs.m1;
+            document.getElementById('inp_b2').value = configs.b2; document.getElementById('inp_k2').value = configs.k2; document.getElementById('inp_m2').value = configs.m2;
             document.getElementById('inp_h1').value = configs.h1; document.getElementById('inp_h2').value = configs.h2;
             abrirModal('modAjustes');
         }
         function salvarAjustes() {
             configs = {
-                b1: parseFloat(document.getElementById('inp_b1').value), k1: parseFloat(document.getElementById('inp_k1').value),
-                b2: parseFloat(document.getElementById('inp_b2').value), k2: parseFloat(document.getElementById('inp_k2').value),
-                min: parseFloat(document.getElementById('inp_min').value),
+                auto: document.getElementById('check_auto').checked,
+                b1: parseFloat(document.getElementById('inp_b1').value), k1: parseFloat(document.getElementById('inp_k1').value), m1: parseFloat(document.getElementById('inp_m1').value),
+                b2: parseFloat(document.getElementById('inp_b2').value), k2: parseFloat(document.getElementById('inp_k2').value), m2: parseFloat(document.getElementById('inp_m2').value),
                 h1: parseInt(document.getElementById('inp_h1').value), h2: parseInt(document.getElementById('inp_h2').value)
             };
-            localStorage.setItem('taxi_cfg_real', JSON.stringify(configs));
+            localStorage.setItem('taxi_cfg_13', JSON.stringify(configs));
             fecharModal('modAjustes');
             checkFlagAuto();
             Swal.fire('Salvo!', '', 'success');
@@ -438,8 +449,7 @@
                 if(!mapSim) {
                     mapSim = L.map('mapaSim').setView([-21, -44], 13);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapSim);
-                    L.Control.geocoder({ defaultMarkGeocode: false, placeholder:'Destino...' })
-                    .on('markgeocode', function(e) { rota(e.geocode.center); }).addTo(mapSim);
+                    L.Control.geocoder({ defaultMarkGeocode: false, placeholder:'Destino...' }).on('markgeocode', function(e) { rota(e.geocode.center); }).addTo(mapSim);
                 }
                 mapSim.invalidateSize();
                 navigator.geolocation.getCurrentPosition(p => {
@@ -452,29 +462,27 @@
         function rota(dest) {
             if(!mapSim.myPos) return;
             if(rotaCtrl) mapSim.removeControl(rotaCtrl);
-            rotaCtrl = L.Routing.control({
-                waypoints: [L.latLng(mapSim.myPos), dest], createMarker: ()=>null, show:false
-            }).on('routesfound', e => {
+            rotaCtrl = L.Routing.control({ waypoints: [L.latLng(mapSim.myPos), dest], createMarker: ()=>null, show:false }).on('routesfound', e => {
                 const d = e.routes[0].summary.totalDistance / 1000;
                 const t = e.routes[0].summary.totalTime / 60;
                 
                 let b = corrida.flag===1 ? configs.b1 : configs.b2;
                 let k = corrida.flag===1 ? configs.k1 : configs.k2;
+                let m = corrida.flag===1 ? configs.m1 : configs.m2;
+                
                 let v = b;
                 if(d > 1.5) v += (d-1.5)*k;
-                v += t * configs.min;
+                v += t * m;
                 
                 document.getElementById('simValor').innerText = `R$ ${v.toFixed(2)}`;
                 document.getElementById('simDist').innerText = `${d.toFixed(1)} km`;
             }).addTo(mapSim);
         }
 
-        // --- MODAL UTILS ---
+        // --- GERAL ---
         function abrirModal(id) { document.getElementById(id).style.display='flex'; }
         function fecharModal(id) { document.getElementById(id).style.display='none'; }
         function getD(lat1, lon1, lat2, lon2) { const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180; const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2); return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
-
-        // --- HISTORICO ---
         function abrirHistorico() {
             abrirModal('modHist');
             db.ref('taxi_rides').limitToLast(10).once('value').then(s => {
