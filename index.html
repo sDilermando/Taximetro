@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Taxímetro Enterprise 10.0</title>
+    <title>Taxímetro Enterprise Final</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     
@@ -44,7 +44,7 @@
         .flag-btn { padding: 8px 20px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; cursor: pointer; border: none; color: #94a3b8; background: transparent; transition: 0.2s; }
         .flag-btn.active { background: var(--primary); color: #000; box-shadow: 0 2px 10px rgba(34,197,94,0.3); }
         .flag-btn.active-2 { background: var(--gold); color: #000; box-shadow: 0 2px 10px rgba(234,179,8,0.3); }
-        .flag-btn.locked { opacity: 0.5; cursor: not-allowed; pointer-events: none; } /* Trava visual */
+        .flag-btn.locked { opacity: 0.5; cursor: not-allowed; pointer-events: none; } 
 
         /* INFO GRID */
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; padding: 0 30px; margin-top: 25px; }
@@ -143,7 +143,7 @@
         <div class="dock-btn" onclick="shareApp()">
             <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg> App
         </div>
-        <div class="dock-btn" onclick="openSettings()">
+        <div class="dock-btn" onclick="openSettingsModal()">
             <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58z"/></svg> Ajustes
         </div>
         <div class="dock-btn" onclick="openAdmin()">
@@ -216,6 +216,8 @@
         const db = firebase.database();
 
         let driver = JSON.parse(localStorage.getItem('taxi_driver')) || null;
+        
+        // CONFIG PADRÃO (Valores Iniciais)
         let config = JSON.parse(localStorage.getItem('taxi_config_v3')) || {
             base1: 6.00, km1: 3.50, 
             base2: 8.00, km2: 4.50, 
@@ -232,7 +234,7 @@
         let isManualFlag = false; 
         let isLocked = false;
         let simMap, routingControl;
-        let lastSimAddress = "Rota GPS"; // Para salvar no histórico
+        let lastSimAddress = "Rota GPS";
 
         window.onload = () => {
             checkDriverRegistration();
@@ -263,7 +265,7 @@
                 isFlag2 = (hour >= config.autoStart && hour < config.autoEnd);
             }
             
-            // SE automático estiver ativo, TRAVA os botões
+            // TRAVA VISUAL
             if(isFlag2) {
                 isLocked = true;
                 document.getElementById('flagLockMsg').style.display = 'block';
@@ -312,8 +314,7 @@
 
         // --- 4. CORRIDA ---
         function startRace() {
-            // Se usuário usou simulador antes, limpa o endereço salvo pois agora é GPS real
-            lastSimAddress = "Rota GPS";
+            lastSimAddress = "Rota GPS"; // Reseta destino
             isRunning = true; isPaused = false;
             startTime = Date.now(); elapsedTime = 0; totalDistance = 0;
             lastLat = null; lastLng = null;
@@ -333,7 +334,6 @@
             navigator.geolocation.clearWatch(watchId);
             isRunning = false;
             
-            // Salva no histórico com o DESTINO
             const ride = { 
                 date: new Date().toLocaleString(), 
                 dist: totalDistance.toFixed(2), 
@@ -341,7 +341,7 @@
                 val: currentFare.toFixed(2), 
                 flag: currentFlag, 
                 driver: driver.name,
-                dest: lastSimAddress // Usa o endereço do simulador se houver, ou "Rota GPS"
+                dest: lastSimAddress 
             };
             db.ref('taxi_rides').push(ride);
 
@@ -362,7 +362,7 @@
             document.getElementById('startRow').style.display = 'block';
             document.getElementById('runningRow').style.display = 'none';
             totalDistance = 0; elapsedTime = 0; currentFare = 0;
-            calculateFare(); // Reseta valor visual para base
+            calculateFare(); // Reseta valor visual
             updateDisplay();
         }
 
@@ -386,12 +386,10 @@
             const activeBase = currentFlag === 1 ? config.base1 : config.base2;
             const activeKm = currentFlag === 1 ? config.km1 : config.km2;
             
-            // REGRA: Até 1.5km paga só a bandeirada.
+            // REGRA 1.5KM:
             if(totalDistance <= 1.5) {
                 currentFare = activeBase;
             } else {
-                // Passou de 1.5km: Cobra o excedente de KM + Tempo Total
-                // (Interpretação: O tempo também só é somado extra após sair da "zona básica")
                 let distCost = (totalDistance - 1.5) * activeKm;
                 let timeCost = (elapsedTime / 60) * config.priceMin;
                 currentFare = activeBase + distCost + timeCost;
@@ -400,7 +398,6 @@
 
         function updateDisplay() {
             if(!isRunning) {
-                // Se parado, mostra o valor da bandeirada atual
                 const base = currentFlag === 1 ? config.base1 : config.base2;
                 document.getElementById('displayPrice').innerText = `R$ ${base.toFixed(2)}`;
             } else {
@@ -414,7 +411,6 @@
         function openSimulator() {
             document.getElementById('modalSimulator').style.display = 'flex';
             setTimeout(() => {
-                // Pega local atual primeiro
                 navigator.geolocation.getCurrentPosition(pos => {
                     const myLat = pos.coords.latitude;
                     const myLng = pos.coords.longitude;
@@ -423,23 +419,17 @@
                         simMap = L.map('simMap').setView([myLat, myLng], 14);
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(simMap);
                         
-                        // Busca de Destino
                         L.Control.geocoder({
                             defaultMarkGeocode: false,
                             placeholder: "Pesquise a rua destino..."
                         }).on('markgeocode', function(e) {
                             const destLatLng = e.geocode.center;
-                            lastSimAddress = e.geocode.name; // Salva nome da rua
+                            lastSimAddress = e.geocode.name; 
                             
-                            // Limpa rota anterior
                             if(routingControl) simMap.removeControl(routingControl);
                             
-                            // Traça Rota: De (Eu) Para (Pesquisa)
                             routingControl = L.Routing.control({
-                                waypoints: [
-                                    L.latLng(myLat, myLng),
-                                    destLatLng
-                                ],
+                                waypoints: [ L.latLng(myLat, myLng), destLatLng ],
                                 createMarker: function(i, wp) {
                                     return L.marker(wp.latLng, {
                                         icon: L.icon({
@@ -453,7 +443,6 @@
                                 const distKm = e.routes[0].summary.totalDistance / 1000;
                                 const timeMin = e.routes[0].summary.totalTime / 60;
                                 
-                                // Cálculo Estimado (Mesma regra 1.5km)
                                 const activeBase = currentFlag === 1 ? config.base1 : config.base2;
                                 const activeKm = currentFlag === 1 ? config.km1 : config.km2;
                                 let estPrice = activeBase;
@@ -469,7 +458,6 @@
                             simMap.fitBounds(L.latLngBounds([L.latLng(myLat, myLng), destLatLng]));
                         }).addTo(simMap);
                         
-                        // Marcador do Motorista
                         L.marker([myLat, myLng]).addTo(simMap).bindPopup("Você está aqui").openPopup();
                     } else {
                         simMap.setView([myLat, myLng], 14);
@@ -479,8 +467,8 @@
             }, 300);
         }
 
-        // --- 6. CONFIGURAÇÕES ---
-        async function openSettings() {
+        // --- 6. CONFIGURAÇÕES (CORRIGIDA) ---
+        async function openSettingsModal() {
             const { value: v } = await Swal.fire({
                 title: 'Ajustes',
                 html: `
@@ -549,7 +537,6 @@
                 if(!snap.exists()) return list.innerHTML = 'Vazio.';
                 const arr = []; snap.forEach(c => arr.push(c.val()));
                 arr.reverse().forEach(r => {
-                    // Tenta mostrar o destino, se não existir, mostra "Rota Local"
                     const dest = r.dest || "Rota Local";
                     list.innerHTML += `<div class="list-item" style="color:#ccc">
                         <div style="display:flex; justify-content:space-between; color:white;"><b>R$ ${r.val}</b> <small>${r.date}</small></div>
@@ -563,7 +550,6 @@
         function shareApp() { if(navigator.share) navigator.share({title: 'Taxímetro', url: window.location.href}); }
         function shareRide(r) { const txt = `🚖 RECIBO\nValor: R$ ${r.val}\nDist: ${r.dist}km\nTempo: ${r.time}\nBandeira: ${r.flag}\nMot: ${r.driver}`; if(navigator.share) navigator.share({text: txt}); }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function openSettings() { openSettings(); } // Linkando a função
         function openAdmin() { document.getElementById('modalAdmin').style.display = 'flex'; }
         function formatTime(s) { const m=Math.floor(s/60).toString().padStart(2,'0'); const sc=(s%60).toString().padStart(2,'0'); return `${m}:${sc}`; }
         function getDist(lat1, lon1, lat2, lon2) { const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180; const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2); return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
