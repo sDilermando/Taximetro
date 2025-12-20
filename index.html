@@ -3,491 +3,437 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Taxímetro Pro 7.1</title>
+    <title>Taxímetro PRO</title>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
         :root {
-            --gold: #FFD700;
-            --dark-bg: #000000;
-            --panel-bg: #111;
-            --success: #25D366;
-            --warning: #ff9900;
-            --flag2-color: #00b7ff;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --primary: #22c55e; /* Verde Dinheiro */
+            --danger: #ef4444;
+            --accent: #3b82f6;
+            --text: #f8fafc;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        html, body {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            background-color: var(--dark-bg);
-            font-family: 'Montserrat', sans-serif;
-            overflow: hidden;
-            touch-action: none;
-            display: flex; flex-direction: column;
-            color: white;
-            position: fixed;
-        }
-
-        /* --- 1. TOPO MAIS COMPACTO --- */
-        .top-header {
-            flex: 0 0 45px; /* Altura reduzida */
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 15px;
-            background: rgba(10, 10, 10, 0.98);
-            border-bottom: 1px solid #222;
-            z-index: 20;
-        }
-
-        .header-left { font-size: 0.7rem; color: #aaa; font-weight: bold; width: 70px; }
-        .header-center { 
-            flex: 1; text-align: center; 
-            font-family: 'Orbitron', sans-serif; font-weight: 900; 
-            color: var(--gold); letter-spacing: 1px; font-size: 0.85rem;
-        }
-        .header-right { width: 70px; } 
-
-        /* --- 2. BARRA DE BOTÕES (MENOR) --- */
-        .toolbar-container {
-            flex: 0 0 55px; /* Altura reduzida para subir o quadro */
-            display: flex; align-items: center; justify-content: center;
-            gap: 12px; /* Espaço menor entre botões */
-            background: transparent;
-            z-index: 20;
-        }
-
-        .tool-btn {
-            width: 38px; height: 38px; /* Botões menores */
-            background: #1a1a1a; border: 1px solid #333;
-            border-radius: 10px;
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer; fill: #ccc;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            transition: transform 0.1s;
-        }
-        .tool-btn svg { width: 18px; height: 18px; }
-        .tool-btn:active { transform: scale(0.9); background: var(--gold); border-color: var(--gold); fill: #000; }
-        .tool-btn.whatsapp { fill: var(--success); border-color: #1a4d2e; }
-
-        /* --- 3. CONTEÚDO PRINCIPAL --- */
-        .main-content {
-            flex: 1; 
-            display: flex; justify-content: center; align-items: flex-start; /* Alinha mais pro topo */
-            padding: 10px 20px; /* Menos padding */
-            position: relative;
-        }
-
-        .main-card {
-            width: 100%; max-width: 340px;
-            background: var(--panel-bg);
-            border: 2px solid #333; border-radius: 25px;
-            padding: 15px; /* Padding interno menor */
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; justify-content: space-between;
-            margin-top: 10px; /* Pequeno espaço do topo */
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         
-        .main-card.flag1 { border-color: var(--gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.1); }
-        .main-card.flag2 { border-color: var(--flag2-color); box-shadow: 0 0 20px rgba(0, 183, 255, 0.1); }
-
-        .status-tag {
-            align-self: center;
-            background: #000; color: #666;
-            padding: 4px 12px; border-radius: 15px; font-size: 0.65rem;
-            text-transform: uppercase; font-weight: bold; border: 1px solid #333;
-            margin-bottom: 5px;
+        body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg); color: var(--text);
+            font-family: 'Inter', sans-serif;
+            display: flex; flex-direction: column; overflow: hidden;
         }
-        .status-tag.running { color: var(--success); border-color: var(--success); }
-        .status-tag.paused { color: var(--warning); border-color: var(--warning); }
 
-        /* Chave Bandeira */
-        .flag-switch { 
-            display: flex; background: #222; border-radius: 20px; padding: 2px; 
-            margin: 5px auto; width: fit-content; border: 1px solid #444; position: relative;
+        /* HEADER */
+        .header {
+            padding: 20px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid #334155;
         }
-        .flag-option { padding: 5px 12px; font-size: 0.7rem; font-weight: bold; color: #666; z-index: 2; transition: 0.3s; }
-        .flag-option.active { color: #000; }
-        .switch-bg { position: absolute; top: 2px; left: 2px; width: 50%; height: calc(100% - 4px); border-radius: 17px; transition: 0.3s; z-index: 1; }
-        .flag-switch[data-state="1"] .switch-bg { left: 2px; background: var(--gold); }
-        .flag-switch[data-state="2"] .switch-bg { left: 50%; background: var(--flag2-color); }
-        .auto-badge { font-size: 0.55rem; color: var(--success); text-align: center; height: 12px; margin-bottom: 5px;}
-
-        /* Display Valores */
-        .big-price {
-            font-family: 'Orbitron', sans-serif; font-size: 3.5rem; /* Levemente menor */
-            font-weight: 700; color: white; margin: 5px 0; line-height: 1;
+        .brand { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
+        .brand span { color: var(--primary); }
+        .gps-badge { 
+            font-size: 0.7rem; background: rgba(34, 197, 94, 0.1); 
+            color: var(--primary); padding: 4px 10px; border-radius: 20px; 
+            border: 1px solid var(--primary); font-weight: bold;
+            display: flex; align-items: center; gap: 5px;
         }
-        .main-card.flag1 .big-price { color: var(--gold); }
-        .main-card.flag2 .big-price { color: var(--flag2-color); }
-        .currency { font-size: 1.2rem; vertical-align: super; color: #888; }
+        .blink { animation: blinker 1.5s linear infinite; width:8px; height:8px; background:var(--primary); border-radius:50%; }
+        @keyframes blinker { 50% { opacity: 0; } }
 
-        .stats-row { display: flex; justify-content: space-around; margin: 10px 0; padding-top: 10px; border-top: 1px solid #222; }
-        .stat-val { font-family: 'Orbitron'; font-size: 1.1rem; font-weight: bold; }
-        .stat-lbl { font-size: 0.55rem; color: #666; text-transform: uppercase; margin-top: 2px; }
+        /* PAINEL PRINCIPAL */
+        .main-display {
+            flex: 1; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 70%);
+        }
 
-        .controls-row { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-main { background: linear-gradient(135deg, #FFD700, #FDB931); color: black; border: none; padding: 15px 0; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 800; text-transform: uppercase; flex-grow: 1; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2); }
-        .btn-main.stop { background: linear-gradient(135deg, #ff4444, #cc0000); color: white; box-shadow: 0 4px 15px rgba(255, 68, 68, 0.2); }
-        .btn-pause { width: 50px; border-radius: 12px; background: #222; border: 1px solid #333; color: white; font-size: 1.1rem; display: none; justify-content: center; align-items: center; }
-        .btn-pause.active { background: var(--warning); color: black; }
+        .price-label { font-size: 0.9rem; color: #94a3b8; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        .price-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 4.5rem; font-weight: 700;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+        .info-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+            width: 100%; padding: 0 40px; margin-top: 30px;
+        }
+        .info-item { text-align: center; }
+        .info-val { font-size: 1.5rem; font-weight: 700; color: white; }
+        .info-lbl { font-size: 0.7rem; color: #64748b; text-transform: uppercase; }
 
-        /* --- MODAIS --- */
-        .overlay-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: 100; display: none; flex-direction: column; overflow-y: auto; touch-action: pan-y; }
-        .overlay-screen.active { display: flex; }
-        .modal-header { padding: 15px; background: #222; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-        .modal-title { font-weight: bold; color: var(--gold); }
-        .modal-close { background: #333; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; }
-        .modal-body { padding: 20px; flex: 1; text-align: center; }
-        .map-frame { flex: 1; position: relative; }
-        #visibleMap { width: 100%; height: 100%; }
-        .map-search-bar { padding: 10px; background: #222; display: flex; gap: 5px; }
-        .input-bar { flex: 1; padding: 10px; border-radius: 5px; border: none; background: #333; color: white; }
-        .btn-full { width: 100%; padding: 15px; background: var(--gold); border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; color: black; }
-        .input-line { width: 100%; padding: 12px; margin: 8px 0; background: #333; border: 1px solid #444; color: white; border-radius: 8px; text-align: center; }
-        .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #222; padding: 5px; border-radius: 10px; }
-        .tab { flex: 1; padding: 10px; text-align: center; font-size: 0.8rem; border-radius: 8px; color: #888; }
-        .tab.active { background: var(--gold); color: black; font-weight: bold; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        /* CONTROLES */
+        .controls {
+            background: #1e293b; padding: 25px;
+            border-top-left-radius: 30px; border-top-right-radius: 30px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; gap: 15px;
+        }
+
+        .btn-row { display: flex; gap: 15px; }
+
+        .btn-big {
+            flex: 1; padding: 20px; border: none; border-radius: 16px;
+            font-size: 1rem; font-weight: 800; text-transform: uppercase;
+            cursor: pointer; transition: transform 0.1s;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            color: white; position: relative; overflow: hidden;
+        }
+        .btn-big:active { transform: scale(0.96); }
+
+        .btn-start { background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3); }
+        .btn-stop { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
+        .btn-pause { background: #334155; color: #cbd5e1; }
+        .btn-settings { background: #0f172a; color: #94a3b8; border: 1px solid #334155; width: 60px; }
+
+        /* ÍCONES SVG */
+        svg { width: 24px; height: 24px; fill: currentColor; }
+
+        /* MODAL HISTÓRICO */
+        .history-panel {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 100;
+            display: none; flex-direction: column; padding: 20px;
+        }
+        .history-list { overflow-y: auto; flex: 1; margin-top: 20px; }
+        .history-item {
+            background: #1e293b; padding: 15px; border-radius: 10px;
+            margin-bottom: 10px; border-left: 4px solid var(--primary);
+            display: flex; justify-content: space-between; align-items: center;
+        }
 
     </style>
 </head>
 <body>
 
-    <div id="map" style="display:none;"></div>
-
-    <div class="top-header">
-        <div class="header-left">
-            <div id="clock">12:00</div>
-            <div id="temp" style="font-weight:normal; opacity:0.7">26°C</div>
-        </div>
-        <div class="header-center">TAXÍMETRO VIRTUAL</div>
-        <div class="header-right"></div>
+    <div class="header">
+        <div class="brand">TAXI<span>METER</span></div>
+        <div class="gps-badge"><div class="blink"></div> GPS ATIVO</div>
+        <button class="btn-big btn-settings" onclick="openSettings()" style="padding:10px;">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58z"/></svg>
+        </button>
     </div>
 
-    <div class="toolbar-container">
-        <div class="tool-btn" onclick="openHistory()" title="Relatório"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
-        <div class="tool-btn" onclick="openMapScreen()" title="Mapa"><svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg></div>
-        <div class="tool-btn whatsapp" onclick="openWhatsApp()" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2zM12.05 19.98c-1.48 0-2.93-.4-4.21-1.15l-.3-.18-3.11.82.83-3.04-.19-.31c-.82-1.33-1.26-2.87-1.26-4.46 0-4.66 3.79-8.45 8.45-8.45 2.26 0 4.38.88 5.98 2.48 1.6 1.6 2.48 3.72 2.48 5.98 0 4.66-3.79 8.45-8.45 8.45h-.22z"/></svg></div>
-        <div class="tool-btn" onclick="openSettings()" title="Config"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div>
+    <div class="main-display">
+        <div class="price-label">Valor Total</div>
+        <div class="price-value" id="displayPrice">R$ 0,00</div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-val" id="displayDist">0.0</div>
+                <div class="info-lbl">KM RODADOS</div>
+            </div>
+            <div class="info-item">
+                <div class="info-val" id="displayTime">00:00</div>
+                <div class="info-lbl">TEMPO</div>
+            </div>
         </div>
-
-    <div class="main-content">
-        <div class="main-card flag1" id="mainCard">
-            
-            <div class="status-tag" id="statusTag">LIVRE</div>
-
-            <div class="flag-switch-container">
-                <div class="flag-switch" id="flagSwitch" data-state="1" onclick="toggleFlagManual()">
-                    <div class="switch-bg"></div>
-                    <div class="flag-option active" id="opt1">BAND 1</div>
-                    <div class="flag-option" id="opt2">BAND 2</div>
-                </div>
-                <div class="auto-badge" id="autoBadge">AUTO ON</div>
-            </div>
-
-            <div class="big-price"><span class="currency">R$</span> <span id="mainPrice">0,00</span></div>
-            
-            <div class="stats-row">
-                <div class="stat-item"><span class="stat-val" id="mainDist">0.0</span><span class="stat-lbl">KM</span></div>
-                <div class="stat-item"><span class="stat-val" id="mainTime">00:00</span><span class="stat-lbl">TEMPO</span></div>
-            </div>
-
-            <div class="controls-row">
-                <button class="btn-pause" id="btnPause" onclick="togglePause()">⏸</button>
-                <button class="btn-main" id="btnMain" onclick="toggleRide()">INICIAR</button>
-            </div>
+        
+        <div style="margin-top:20px;">
+            <span id="tariffBadge" style="background:#334155; color:white; padding:5px 15px; border-radius:15px; font-size:0.8rem;">BANDEIRA 1</span>
         </div>
     </div>
 
-    <div id="mapScreen" class="overlay-screen">
-        <div class="map-search-bar">
-            <input type="text" id="destInput" class="input-bar" placeholder="Endereço de destino...">
-            <button class="tool-btn" style="background:var(--gold); border:none;" onclick="calculateEstimate()">IR</button>
-            <button class="tool-btn" style="background:#333; color:white; border:none;" onclick="closeMapScreen()">✕</button>
+    <div class="controls">
+        <div class="btn-row" id="startRow">
+            <button class="btn-big btn-start" onclick="startRace()">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> INICIAR CORRIDA
+            </button>
         </div>
-        <div id="estimateBar" style="background:var(--gold); color:black; padding:10px; text-align:center; font-weight:bold; display:none;">Estimativa: R$ 0,00</div>
-        <div class="map-frame"><div id="visibleMap"></div></div>
+
+        <div class="btn-row" id="runningRow" style="display:none;">
+            <button class="btn-big btn-pause" onclick="togglePause()" id="btnPause">
+                <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+            <button class="btn-big btn-stop" onclick="finishRace()">
+                <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg> ENCERRAR
+            </button>
+        </div>
+
+        <button onclick="showHistory()" style="background:transparent; color:#64748b; border:none; padding:10px; font-size:0.8rem; margin-top:5px;">VER HISTÓRICO DE CORRIDAS</button>
     </div>
 
-    <div id="historyScreen" class="overlay-screen">
-        <div class="modal-header"><span class="modal-title">HISTÓRICO</span><button class="modal-close" onclick="closeOverlay('historyScreen')">✕</button></div>
-        <div class="modal-body">
-            <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:15px;">
-                <span style="color:#aaa; font-size:0.8rem;">TOTAL DO DIA</span>
-                <strong style="color:white; font-size:1.8rem; display:block;" id="dayTotal">R$ 0,00</strong>
-            </div>
-            <div id="historyList" style="text-align:left;"></div>
-            <button class="btn-full" style="background:#cc0000; color:white;" onclick="clearHistory()">LIMPAR TUDO</button>
+    <div id="historyPanel" class="history-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; color:white;">
+            <h2>Histórico</h2>
+            <button onclick="document.getElementById('historyPanel').style.display='none'" style="background:none; border:none; color:white; font-size:1.5rem;">×</button>
         </div>
+        <div id="historyList" class="history-list"></div>
     </div>
-
-    <div id="configScreen" class="overlay-screen">
-        <div class="modal-header"><span class="modal-title">CONFIGURAÇÕES</span><button class="modal-close" onclick="closeOverlay('configScreen')">✕</button></div>
-        <div class="modal-body">
-            <div class="tabs">
-                <div class="tab active" onclick="switchTab('tab1', this)">BAND 1</div>
-                <div class="tab" onclick="switchTab('tab2', this)">BAND 2</div>
-                <div class="tab" onclick="switchTab('tabAuto', this)">AUTO</div>
-            </div>
-            <div id="tab1" class="tab-content active">
-                <input type="number" id="basePrice1" class="input-line" placeholder="Bandeirada">
-                <input type="number" id="kmPrice1" class="input-line" placeholder="Preço KM">
-                <input type="number" id="hourPrice1" class="input-line" placeholder="Preço Hora">
-            </div>
-            <div id="tab2" class="tab-content">
-                <input type="number" id="basePrice2" class="input-line" placeholder="Bandeirada">
-                <input type="number" id="kmPrice2" class="input-line" placeholder="Preço KM">
-                <input type="number" id="hourPrice2" class="input-line" placeholder="Preço Hora">
-            </div>
-            <div id="tabAuto" class="tab-content">
-                <div class="checkbox-row"><input type="checkbox" id="autoFlagCheck" style="transform:scale(1.5);"><span>Troca Automática</span></div>
-                <label>Início (Hora)</label><input type="number" id="autoStart" class="input-line" value="22">
-                <label>Fim (Hora)</label><input type="number" id="autoEnd" class="input-line" value="6">
-            </div>
-            <button class="btn-full" onclick="saveSettings()">SALVAR</button>
-            <div style="margin-top:30px; font-size:0.7rem; color:#666; border-top:1px solid #333; padding-top:10px;">ID do Motorista (Admin)</div>
-            <button class="btn-full" style="background:#222; color:#555; border:1px solid #333; margin-top:5px;" onclick="openAdmin()">EDITAR ID</button>
-        </div>
-    </div>
-
-    <div id="receiptScreen" class="overlay-screen" style="justify-content:center; align-items:center; background:rgba(0,0,0,0.95);">
-        <div style="background:#1a1a1a; padding:30px; border-radius:20px; width:90%; max-width:320px; text-align:center; border:1px solid #333;">
-            <h2 style="color:white; margin:0;">TOTAL</h2>
-            <strong id="recTotal" style="font-size:3rem; color:var(--gold); display:block; margin:10px 0;">R$ 0,00</strong>
-            <div style="display:flex; justify-content:space-between; color:#888; margin-bottom:20px;">
-                <span id="recDist">0 km</span><span id="recTime">00:00</span>
-            </div>
-            <button class="btn-full" style="background:var(--success);" onclick="shareRide()">ZAP / SHARE</button>
-            <button class="btn-full" style="background:#333; color:white; margin-top:10px;" onclick="closeReceipt()">VOLTAR</button>
-        </div>
-    </div>
-
-    <div id="registerModal" class="overlay-screen" style="justify-content:center; align-items:center;">
-        <div style="background:#1a1a1a; padding:30px; border-radius:20px; width:80%; text-align:center;">
-            <h3 style="color:var(--gold);">BEM-VINDO</h3>
-            <input type="text" id="regName" class="input-line" placeholder="Seu Nome">
-            <button class="btn-full" onclick="registerDriver()">ENTRAR</button>
-        </div>
-    </div>
-
-    <div id="adminModal" class="overlay-screen" style="justify-content:center; align-items:center;">
-        <div style="background:#1a1a1a; padding:30px; border-radius:20px; width:80%; text-align:center;">
-            <h3 style="color:#ff4444;">ADMIN</h3>
-            <input type="password" id="adminPass" class="input-line" placeholder="Senha">
-            <button class="btn-full" onclick="checkAdmin()">ACESSAR</button>
-            <button class="btn-full" style="background:#333; color:white; margin-top:10px;" onclick="closeOverlay('adminModal')">CANCELAR</button>
-            <div id="adminPanel" style="display:none; margin-top:10px; color:#888;"></div>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
     <script>
-        let driverInfo = { name: '', id: '000' };
-        let rideHistory = [];
-        let currentFlag = 1; 
-        let config = { f1: { base: 5.0, km: 2.5, hour: 24.0 }, f2: { base: 6.0, km: 3.0, hour: 30.0 }, auto: { active: false, start: 22, end: 6 } };
+        // CONFIG FIREBASE (Mesmas chaves do app Vagas)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBzD2q7VWFM1jGqj-787M3AZV0_I9uFZ_s",
+            authDomain: "vaga-especial-ff7d3.firebaseapp.com",
+            databaseURL: "https://vaga-especial-ff7d3-default-rtdb.firebaseio.com",
+            projectId: "vaga-especial-ff7d3",
+            storageBucket: "vaga-especial-ff7d3.firebasestorage.app",
+            messagingSenderId: "220203379880",
+            appId: "1:220203379880:web:3ed69498dd1a7c3049e69d"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        function initApp() {
-            const data = localStorage.getItem('sjdr_taxi_driver');
-            if (data) driverInfo = JSON.parse(data); else document.getElementById('registerModal').style.display='flex';
-            const hist = localStorage.getItem('sjdr_taxi_history');
-            if (hist) rideHistory = JSON.parse(hist);
-            const cfg = localStorage.getItem('sjdr_taxi_config');
-            if (cfg) config = JSON.parse(cfg);
-            fillConfigInputs(); updateClock();
-        }
+        // CONFIGURAÇÕES PADRÃO (Salvas no LocalStorage)
+        let config = JSON.parse(localStorage.getItem('taxi_config')) || {
+            basePrice: 6.00, // Bandeirada
+            priceKm: 3.50,   // Preço KM
+            priceMin: 0.50,  // Preço Minuto Parado
+            flag2: 20        // Acréscimo % Bandeira 2
+        };
 
-        function fillConfigInputs() {
-            document.getElementById('basePrice1').value = config.f1.base; document.getElementById('kmPrice1').value = config.f1.km; document.getElementById('hourPrice1').value = config.f1.hour;
-            document.getElementById('basePrice2').value = config.f2.base; document.getElementById('kmPrice2').value = config.f2.km; document.getElementById('hourPrice2').value = config.f2.hour;
-            document.getElementById('autoFlagCheck').checked = config.auto.active; document.getElementById('autoStart').value = config.auto.start; document.getElementById('autoEnd').value = config.auto.end;
-        }
+        // VARIÁVEIS DE CONTROLE
+        let isRunning = false;
+        let isPaused = false;
+        let startTime = 0;
+        let elapsedTime = 0;
+        let totalDistance = 0;
+        let lastLat = null;
+        let lastLng = null;
+        let timerInterval = null;
+        let watchId = null;
+        let currentFare = 0;
+        let isFlag2 = false;
 
-        function registerDriver() {
-            const name = document.getElementById('regName').value;
-            if(!name) return alert("Nome necessário");
-            driverInfo = { name, id: Math.floor(Math.random()*900)+100 };
-            localStorage.setItem('sjdr_taxi_driver', JSON.stringify(driverInfo));
-            document.getElementById('registerModal').style.display='none';
-        }
+        // INICIALIZAÇÃO
+        window.onload = () => {
+            if(!navigator.geolocation) Swal.fire('Erro', 'Seu celular não tem GPS.', 'error');
+            updateDisplay();
+        };
 
-        function saveSettings() {
-            config.f1.base = parseFloat(document.getElementById('basePrice1').value); config.f1.km = parseFloat(document.getElementById('kmPrice1').value); config.f1.hour = parseFloat(document.getElementById('hourPrice1').value);
-            config.f2.base = parseFloat(document.getElementById('basePrice2').value); config.f2.km = parseFloat(document.getElementById('kmPrice2').value); config.f2.hour = parseFloat(document.getElementById('hourPrice2').value);
-            config.auto.active = document.getElementById('autoFlagCheck').checked; config.auto.start = parseInt(document.getElementById('autoStart').value); config.auto.end = parseInt(document.getElementById('autoEnd').value);
-            localStorage.setItem('sjdr_taxi_config', JSON.stringify(config));
-            closeOverlay('configScreen'); checkAutoFlag();
-        }
+        // --- LÓGICA DA CORRIDA ---
 
-        let mapVisible, routeControl;
-        function initMaps() {
-            mapVisible = L.map('visibleMap', {zoomControl: false}).setView([-21.135, -44.261], 15);
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(mapVisible);
-        }
-        function openMapScreen() {
-            if(!mapVisible) initMaps();
-            document.getElementById('mapScreen').classList.add('active');
-            setTimeout(() => { mapVisible.invalidateSize(); if(navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => mapVisible.setView([pos.coords.latitude, pos.coords.longitude], 16)); }, 200);
-        }
-        function closeMapScreen() { document.getElementById('mapScreen').classList.remove('active'); }
-        function calculateEstimate() {
-            const query = document.getElementById('destInput').value;
-            if(!query) return;
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-                .then(r => r.json()).then(data => {
-                    if(!data.length) return alert("Não encontrado");
-                    const dest = L.latLng(data[0].lat, data[0].lon);
-                    navigator.geolocation.getCurrentPosition(pos => {
-                        const start = L.latLng(pos.coords.latitude, pos.coords.longitude);
-                        if(routeControl) mapVisible.removeControl(routeControl);
-                        routeControl = L.Routing.control({
-                            waypoints: [start, dest],
-                            lineOptions: { styles: [{color: '#007BFF', weight: 6}] },
-                            createMarker: function() { return null; }, show: false
-                        }).on('routesfound', function(e) {
-                            const d = e.routes[0].summary.totalDistance / 1000;
-                            const t = e.routes[0].summary.totalTime / 60;
-                            const rates = currentFlag === 1 ? config.f1 : config.f2;
-                            let total = (d < 1.5) ? rates.base : rates.base + ((d-1.5)*rates.km) + ((t/60)*rates.hour);
-                            document.getElementById('estimateBar').style.display='block';
-                            document.getElementById('estimateBar').innerText = `Estimativa: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
-                        }).addTo(mapVisible);
-                    });
-                });
-        }
+        function startRace() {
+            Swal.fire({
+                title: 'Iniciar Corrida?',
+                text: `Bandeirada: R$ ${config.basePrice.toFixed(2)}`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#22c55e',
+                confirmButtonText: 'Iniciar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    isRunning = true;
+                    isPaused = false;
+                    startTime = Date.now();
+                    elapsedTime = 0;
+                    totalDistance = 0;
+                    lastLat = null;
+                    lastLng = null;
+                    
+                    // Verifica Bandeira 2 (Ex: noite ou domingo) - Lógica simples
+                    const hour = new Date().getHours();
+                    isFlag2 = (hour >= 20 || hour <= 6); // Automático após as 20h
+                    document.getElementById('tariffBadge').innerText = isFlag2 ? "BANDEIRA 2 (+20%)" : "BANDEIRA 1";
 
-        let isRunning = false, isPaused = false;
-        let watchId = null, intervalId = null;
-        let totalDistance = 0, startTime = 0;
-        let lastLat = 0, lastLng = 0;
-
-        function checkAutoFlag() {
-            const badge = document.getElementById('autoBadge');
-            if (config.auto.active) {
-                badge.style.display = 'block';
-                const h = new Date().getHours();
-                const s = config.auto.start; const e = config.auto.end;
-                let isF2 = (s > e) ? (h >= s || h < e) : (h >= s && h < e);
-                if (isF2 && currentFlag !== 2) setFlag(2);
-                if (!isF2 && currentFlag !== 1) setFlag(1);
-            } else { badge.style.display = 'none'; }
-        }
-
-        function toggleFlagManual() {
-            if (config.auto.active) return alert("Modo Auto Ativo");
-            setFlag(currentFlag === 1 ? 2 : 1);
-        }
-
-        function setFlag(f) {
-            currentFlag = f;
-            document.getElementById('flagSwitch').setAttribute('data-state', f);
-            const card = document.getElementById('mainCard');
-            if(f===1) { card.classList.add('flag1'); card.classList.remove('flag2'); document.getElementById('opt1').classList.add('active'); document.getElementById('opt2').classList.remove('active');}
-            else { card.classList.add('flag2'); card.classList.remove('flag1'); document.getElementById('opt2').classList.add('active'); document.getElementById('opt1').classList.remove('active');}
-        }
-
-        function toggleRide() {
-            const btn = document.getElementById('btnMain');
-            if (!isRunning) {
-                isRunning = true; isPaused = false;
-                btn.innerText = "ENCERRAR"; btn.classList.add('stop');
-                document.getElementById('btnPause').style.display = 'flex';
-                document.getElementById('statusTag').innerText = "EM CORRIDA"; document.getElementById('statusTag').className = "status-tag running";
-                totalDistance = 0; startTime = Date.now(); lastLat = 0;
-                updateScreen(0,0,0);
-                if (navigator.geolocation) watchId = navigator.geolocation.watchPosition(updatePos, null, {enableHighAccuracy:true});
-                intervalId = setInterval(updateCalc, 1000);
-            } else {
-                isRunning = false;
-                if(watchId) navigator.geolocation.clearWatch(watchId);
-                if(intervalId) clearInterval(intervalId);
-                showReceipt();
-                btn.innerText = "INICIAR"; btn.classList.remove('stop');
-                document.getElementById('btnPause').style.display = 'none';
-                document.getElementById('statusTag').innerText = "LIVRE"; document.getElementById('statusTag').className = "status-tag";
-            }
+                    // Interface
+                    document.getElementById('startRow').style.display = 'none';
+                    document.getElementById('runningRow').style.display = 'flex';
+                    
+                    // Inicia GPS e Timer
+                    startGPS();
+                    timerInterval = setInterval(updateTimer, 1000);
+                }
+            });
         }
 
         function togglePause() {
-            if(!isRunning) return; isPaused = !isPaused;
-            const btn = document.getElementById('btnPause'); const tag = document.getElementById('statusTag');
-            if(isPaused) { btn.classList.add('active'); btn.innerText = "▶"; tag.className = "status-tag paused"; }
-            else { btn.classList.remove('active'); btn.innerText = "⏸"; tag.className = "status-tag running"; }
+            isPaused = !isPaused;
+            const btn = document.getElementById('btnPause');
+            if(isPaused) {
+                btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Play Icon
+                btn.style.background = '#eab308';
+            } else {
+                btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Pause Icon
+                btn.style.background = '#334155';
+            }
         }
 
-        function updatePos(pos) {
-            const lat = pos.coords.latitude; const lng = pos.coords.longitude;
-            if(lastLat === 0) { lastLat = lat; lastLng = lng; return; }
-            const R = 6371; 
-            const d = R * (2 * Math.atan2(Math.sqrt(Math.sin((lat-lastLat)*Math.PI/180/2)**2 + Math.cos(lastLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin((lng-lastLng)*Math.PI/180/2)**2), Math.sqrt(1-(Math.sin((lat-lastLat)*Math.PI/180/2)**2 + Math.cos(lastLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin((lng-lastLng)*Math.PI/180/2)**2))));
-            if(d > 0.005 && !isPaused) { totalDistance += d; lastLat = lat; lastLng = lng; }
+        function finishRace() {
+            clearInterval(timerInterval);
+            navigator.geolocation.clearWatch(watchId);
+            isRunning = false;
+
+            // Salvar no Firebase
+            const rideData = {
+                date: new Date().toLocaleString(),
+                distance: totalDistance.toFixed(2),
+                time: formatTime(elapsedTime),
+                price: currentFare.toFixed(2),
+                flag: isFlag2 ? 2 : 1
+            };
+            db.ref('taxi_rides').push(rideData);
+
+            // Mostrar Recibo
+            Swal.fire({
+                title: 'Corrida Finalizada',
+                html: `
+                    <div style="text-align:left; background:#f1f5f9; padding:15px; border-radius:10px; color:#0f172a;">
+                        <h1 style="text-align:center; color:#22c55e; font-size:2.5rem; margin:0;">R$ ${currentFare.toFixed(2)}</h1>
+                        <hr>
+                        <p><strong>Distância:</strong> ${totalDistance.toFixed(2)} km</p>
+                        <p><strong>Tempo:</strong> ${formatTime(elapsedTime)}</p>
+                        <p><strong>Bandeira:</strong> ${isFlag2 ? '2' : '1'}</p>
+                    </div>
+                `,
+                confirmButtonText: 'Nova Corrida',
+                confirmButtonColor: '#0f172a'
+            }).then(() => {
+                resetApp();
+            });
         }
 
-        function updateCalc() {
-            if(isPaused) return;
-            const rates = currentFlag === 1 ? config.f1 : config.f2;
-            const ms = Date.now() - startTime; const hrs = ms / 3600000;
-            let total = (totalDistance < 1.5) ? rates.base : rates.base + ((totalDistance - 1.5) * rates.km) + (hrs * rates.hour);
-            updateScreen(total, totalDistance, ms);
+        function resetApp() {
+            document.getElementById('startRow').style.display = 'flex';
+            document.getElementById('runningRow').style.display = 'none';
+            totalDistance = 0;
+            elapsedTime = 0;
+            currentFare = 0;
+            updateDisplay();
         }
 
-        function updateScreen(p, d, ms) {
-            document.getElementById('mainPrice').innerText = p.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-            document.getElementById('mainDist').innerText = d.toFixed(2);
-            const s=Math.floor((ms/1000)%60); const m=Math.floor((ms/60000)%60); const h=Math.floor(ms/3600000);
-            document.getElementById('mainTime').innerText = `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        // --- CÁLCULOS ---
+
+        function updateTimer() {
+            if(!isPaused) {
+                elapsedTime++;
+                calculateFare();
+                updateDisplay();
+            }
         }
 
-        function showReceipt() {
-            const p = document.getElementById('mainPrice').innerText;
-            document.getElementById('recTotal').innerText = "R$ " + p;
-            document.getElementById('recDist').innerText = document.getElementById('mainDist').innerText + " km";
-            document.getElementById('recTime').innerText = document.getElementById('mainTime').innerText;
-            document.getElementById('receiptScreen').classList.add('active');
+        function startGPS() {
+            watchId = navigator.geolocation.watchPosition(pos => {
+                if(isPaused) return;
+
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+
+                if(lastLat != null) {
+                    const dist = getDist(lastLat, lastLng, lat, lng);
+                    // Filtro de ruído: só conta se andou mais de 5 metros
+                    if(dist > 0.005) { 
+                        totalDistance += dist;
+                        calculateFare();
+                        updateDisplay();
+                    }
+                }
+                lastLat = lat;
+                lastLng = lng;
+
+            }, err => console.error(err), { 
+                enableHighAccuracy: true, 
+                maximumAge: 0 
+            });
+        }
+
+        function calculateFare() {
+            // Fórmula: Bandeirada + (Km * PreçoKm) + (Minutos * PreçoMin)
+            let fare = config.basePrice + (totalDistance * config.priceKm) + ((elapsedTime / 60) * config.priceMin);
             
-            const ride = { date: new Date().toLocaleTimeString(), val: parseFloat(p.replace('.','').replace(',','.')) };
-            rideHistory.push(ride); localStorage.setItem('sjdr_taxi_history', JSON.stringify(rideHistory));
+            // Aplica Bandeira 2 se necessário
+            if(isFlag2) {
+                fare = fare * (1 + (config.flag2 / 100));
+            }
+            
+            currentFare = fare;
         }
 
-        function openHistory() {
-            document.getElementById('historyScreen').classList.add('active');
-            const l = document.getElementById('historyList'); l.innerHTML = ''; let t = 0;
-            rideHistory.forEach(r => { t += r.val; l.innerHTML += `<div style="background:#222;padding:10px;margin-bottom:5px;display:flex;justify-content:space-between;border-left:3px solid gold;color:white;"><span>${r.date}</span><span>R$ ${r.val.toFixed(2).replace('.',',')}</span></div>`; });
-            document.getElementById('dayTotal').innerText = "R$ " + t.toFixed(2).replace('.',',');
+        function updateDisplay() {
+            document.getElementById('displayPrice').innerText = `R$ ${currentFare.toFixed(2)}`;
+            document.getElementById('displayDist').innerText = totalDistance.toFixed(1);
+            document.getElementById('displayTime').innerText = formatTime(elapsedTime);
         }
-        
-        function openSettings() { document.getElementById('configScreen').classList.add('active'); }
-        function openAdmin() { document.getElementById('adminModal').classList.add('active'); document.getElementById('adminPass').value=''; document.getElementById('adminPanel').style.display='none'; }
-        
-        function checkAdmin() {
-            if(document.getElementById('adminPass').value==='1234') {
-                document.getElementById('adminPanel').style.display='block';
-                document.getElementById('adminPanel').innerHTML = `Motorista: <b style="color:white">${driverInfo.name}</b><br>ID: ${driverInfo.id}`;
-            } else alert('Senha errada');
-        }
-        
-        function closeOverlay(id) { document.getElementById(id).classList.remove('active'); }
-        function switchTab(id, el) { 
-            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); 
-            document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); 
-            el.classList.add('active'); document.getElementById(id).classList.add('active'); 
-        }
-        function closeReceipt() { closeOverlay('receiptScreen'); updateScreen(0,0,0); }
-        function shareRide() { navigator.share({text: `Táxi R$ ${document.getElementById('recTotal').innerText}`}); }
-        function clearHistory() { if(confirm("Limpar?")) { rideHistory=[]; localStorage.removeItem('sjdr_taxi_history'); openHistory(); } }
-        function openWhatsApp() { window.open("https://wa.me/", "_blank"); }
-        function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); checkAutoFlag(); }
-        setInterval(updateClock, 1000);
 
-        initApp();
+        // --- SETTINGS (CONFIGURAÇÃO) ---
+        async function openSettings() {
+            const { value: formValues } = await Swal.fire({
+                title: 'Configurar Tarifas',
+                html: `
+                    <label>Bandeirada (R$)</label>
+                    <input id="swal-base" class="swal2-input" type="number" step="0.10" value="${config.basePrice}">
+                    <label>Preço por KM (R$)</label>
+                    <input id="swal-km" class="swal2-input" type="number" step="0.10" value="${config.priceKm}">
+                    <label>Preço Minuto Parado (R$)</label>
+                    <input id="swal-min" class="swal2-input" type="number" step="0.10" value="${config.priceMin}">
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return {
+                        basePrice: parseFloat(document.getElementById('swal-base').value),
+                        priceKm: parseFloat(document.getElementById('swal-km').value),
+                        priceMin: parseFloat(document.getElementById('swal-min').value)
+                    }
+                }
+            });
+
+            if (formValues) {
+                config = { ...config, ...formValues };
+                localStorage.setItem('taxi_config', JSON.stringify(config));
+                Swal.fire('Salvo', 'Novas tarifas aplicadas', 'success');
+            }
+        }
+
+        // --- HISTÓRICO ---
+        function showHistory() {
+            const panel = document.getElementById('historyPanel');
+            const list = document.getElementById('historyList');
+            panel.style.display = 'flex';
+            list.innerHTML = '<p style="color:#aaa; text-align:center;">Carregando...</p>';
+
+            db.ref('taxi_rides').limitToLast(20).once('value').then(snap => {
+                list.innerHTML = '';
+                if(!snap.exists()) {
+                    list.innerHTML = '<p style="color:#aaa; text-align:center;">Nenhuma corrida ainda.</p>';
+                    return;
+                }
+                
+                // Transforma objeto em array e inverte (mais recente primeiro)
+                const rides = [];
+                snap.forEach(c => rides.push(c.val()));
+                rides.reverse();
+
+                rides.forEach(r => {
+                    list.innerHTML += `
+                        <div class="history-item">
+                            <div>
+                                <div style="color:white; font-weight:bold;">R$ ${r.price}</div>
+                                <div style="color:#64748b; font-size:0.75rem;">${r.date}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="color:#94a3b8; font-size:0.8rem;">${r.distance} km</div>
+                                <div style="color:#94a3b8; font-size:0.8rem;">${r.time}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // --- UTILITÁRIOS ---
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function getDist(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2-lat1) * Math.PI/180;
+            const dLon = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
     </script>
 </body>
 </html>
