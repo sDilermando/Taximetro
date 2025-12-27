@@ -1,253 +1,421 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Taxímetro Digital</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Driver Pro</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <style>
+        :root {
+            --bg-dark: #000022;
+            --bg-light: #000066;
+            --accent: #00ffff;
+            --danger: #ff0055;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-solid: rgba(20, 20, 40, 0.95);
+            --border: rgba(255, 255, 255, 0.15);
+        }
 
-<style>
-body{
-  margin:0;
-  background:#0c0f14;
-  font-family: "Segoe UI", Arial, sans-serif;
-  color:#eaeaea;
-}
-header{
-  background:#111726;
-  text-align:center;
-  padding:14px;
-  font-size:20px;
-  letter-spacing:1px;
-}
-.container{
-  max-width:600px;
-  margin:auto;
-  padding:12px;
-}
-.panel{
-  background:#151c2e;
-  border-radius:14px;
-  padding:15px;
-  margin-bottom:12px;
-}
-.display{
-  font-size:34px;
-  text-align:center;
-  font-weight:bold;
-  color:#00f5a0;
-}
-.info{
-  display:flex;
-  justify-content:space-between;
-  font-size:13px;
-  margin-top:8px;
-}
-button{
-  width:100%;
-  padding:14px;
-  margin-top:8px;
-  border:none;
-  border-radius:10px;
-  font-size:16px;
-  font-weight:bold;
-}
-.start{background:#00f5a0;}
-.pause{background:#2c3558;color:#fff;}
-.stop{background:#ff3b3b;color:#fff;}
-.config input, .config select{
-  width:100%;
-  padding:10px;
-  margin-top:6px;
-  border-radius:8px;
-  border:none;
-  background:#1e2640;
-  color:#fff;
-}
-label{font-size:13px;}
-.row{
-  display:flex;
-  gap:8px;
-}
-#map{height:260px;border-radius:12px;}
-.small{font-size:12px;opacity:.8;text-align:center;}
-</style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+        body {
+            background: radial-gradient(circle at top, var(--bg-light), var(--bg-dark));
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER & NAV */
+        .top-status {
+            height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
+            font-size: 0.8rem; opacity: 0.7; position: absolute; top: 0; width: 100%; z-index: 10;
+        }
+
+        .nav-bar {
+            height: 70px; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+            position: absolute; bottom: 0; width: 100%; display: flex; justify-content: space-around; align-items: center;
+            border-top: 1px solid var(--border); z-index: 100;
+        }
+        .nav-item { font-size: 1.5rem; color: #666; background: none; border: none; transition: 0.3s; }
+        .nav-item.active { color: var(--accent); transform: translateY(-5px); text-shadow: 0 0 10px var(--accent); }
+
+        /* TELAS */
+        .screen { display: none !important; width: 100%; height: 100%; flex-direction: column; padding-top: 50px; padding-bottom: 80px; animation: fadeEffect 0.3s ease; }
+        .screen.active { display: flex !important; }
+        @keyframes fadeEffect { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        /* TELA INICIAL (NEON) */
+        #screen-home { align-items: center; justify-content: center; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid var(--border);
+            border-radius: 30px; padding: 30px; width: 85%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 30px; position: relative;
+        }
+        .flag-tag {
+            position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000;
+            padding: 4px 15px; border-radius: 20px; font-weight: 800; font-size: 0.7rem; letter-spacing: 1px; box-shadow: 0 0 15px var(--accent);
+        }
+        .currency { font-size: 1.5rem; vertical-align: top; color: #aaa; }
+        .price-big { font-size: 4.5rem; font-weight: 800; color: #fff; line-height: 1; text-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
+        .mini-info { display: flex; justify-content: center; gap: 20px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px; }
+        .mini-item { font-size: 0.8rem; color: #ccc; } 
+        .mini-item i { color: var(--accent); margin-right: 5px; }
+
+        .btn-start-wrapper { position: relative; width: 110px; height: 110px; display: flex; justify-content: center; align-items: center; }
+        .pulse-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; animation: pulse 2s infinite; }
+        .main-btn {
+            width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, #00ffff, #0088ff);
+            border: none; color: #000; font-size: 1.8rem; cursor: pointer; box-shadow: 0 0 25px rgba(0, 255, 255, 0.4); z-index: 2; transition: 0.3s;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .main-btn:active { transform: scale(0.95); }
+        .main-btn.stop { background: linear-gradient(135deg, #ff0055, #ff0000); box-shadow: 0 0 25px rgba(255, 0, 85, 0.4); color: #fff; }
+        .pause-btn { margin-top: 20px; background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 25px; border-radius: 20px; font-size: 0.8rem; letter-spacing: 1px; cursor: pointer; display: none; }
+        .pause-btn.active { background: #ffaa00; color: #000; border-color: #ffaa00; }
+        @keyframes pulse { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+
+        /* TELA CONFIG (Grid) */
+        #screen-config { padding: 20px; }
+        .config-scroll { overflow-y: auto; padding-bottom: 20px; }
+        .cfg-group { margin-bottom: 25px; }
+        .cfg-title { color: var(--accent); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        .cfg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .cfg-box {
+            background: var(--glass); border-radius: 12px; padding: 10px; border: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .cfg-label-small { font-size: 0.7rem; color: #aaa; margin-bottom: 5px; }
+        .cfg-input {
+            width: 100%; background: transparent; border: none; color: #fff; font-size: 1.3rem; font-weight: bold; text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;
+        }
+        .save-btn {
+            width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 50px;
+            font-weight: 800; font-size: 1rem; margin-top: 10px; cursor: pointer;
+        }
+
+        /* TELA MAPA */
+        #screen-map { padding: 0; padding-bottom: 70px; position: relative; }
+        #map-wrap { width: 100%; height: 100%; }
+        .search-float {
+            position: absolute; top: 20px; left: 15px; right: 15px; z-index: 1000;
+            background: var(--glass-solid); border-radius: 12px; display: flex; padding: 5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid var(--border);
+        }
+        .search-input { flex: 1; background: transparent; border: none; padding: 12px; color: #fff; outline: none; font-size: 1rem; }
+        .search-btn { width: 50px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-size: 1.1rem; }
+        
+        .preview-card {
+            position: absolute; bottom: 85px; left: 15px; right: 15px; z-index: 1000;
+            background: var(--glass-solid); border-radius: 20px; padding: 20px;
+            border: 1px solid var(--accent); box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            display: none; animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .prev-title { color: var(--accent); font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; }
+        .prev-addr { font-size: 0.9rem; color: #fff; margin-bottom: 15px; line-height: 1.4; }
+        .prev-stats { display: flex; justify-content: space-between; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; }
+        .prev-val { font-size: 1.5rem; font-weight: bold; color: var(--accent); }
+        .prev-dist { font-size: 1rem; color: #ccc; align-self: center; }
+        .btn-row { display: flex; gap: 10px; }
+        .btn-map-action { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: bold; font-size: 0.9rem; }
+        .btn-google { background: #4285F4; color: #fff; }
+        .btn-close { background: #333; color: #fff; }
+        .btn-back-home {
+            position: absolute; bottom: 85px; right: 20px; width: 50px; height: 50px; border-radius: 50%;
+            background: var(--bg-light); color: #fff; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 900; border: 1px solid var(--border);
+        }
+    </style>
 </head>
-
 <body>
 
-<header>🚕 TAXÍMETRO DIGITAL</header>
+    <div class="top-status">
+        <span id="clock">00:00</span>
+        <span style="color:var(--accent); font-weight:bold">NEON DRIVER</span>
+    </div>
 
-<div class="container">
+    <div id="screen-home" class="screen active">
+        <i class="fas fa-location-arrow" style="font-size:2rem; color:var(--accent); margin-bottom:20px; opacity:0.8;"></i>
+        <div class="glass-panel">
+            <div class="flag-tag" id="flag-badge">BANDEIRA 1</div>
+            <span class="currency">R$</span>
+            <div class="price-big" id="ui-price">0,00</div>
+            <div class="mini-info">
+                <div class="mini-item"><i class="fas fa-route"></i> <span id="ui-km">0.0</span> km</div>
+                <div class="mini-item"><i class="fas fa-stopwatch"></i> <span id="ui-time">00:00</span></div>
+            </div>
+        </div>
+        <div class="btn-start-wrapper">
+            <div class="pulse-ring" id="pulse-ring"></div>
+            <button id="btn-main" class="main-btn" onclick="handleRide()"><i class="fas fa-power-off"></i></button>
+        </div>
+        <div style="margin-top:15px; font-size:0.8rem; opacity:0.5; letter-spacing:2px;">INICIAR</div>
+        <button id="btn-pause" class="pause-btn" onclick="togglePause()">PAUSAR CORRIDA</button>
+    </div>
 
-<div class="panel">
-  <div class="display">R$ <span id="valor">0.00</span></div>
-  <div class="info">
-    <span>Dist: <span id="dist">0.00</span> km</span>
-    <span>Tempo: <span id="tempo">0</span> min</span>
-    <span>Bandeira <span id="bandeira">1</span></span>
-  </div>
-</div>
+    <div id="screen-map" class="screen">
+        <div class="search-float">
+            <input type="text" id="map-input" class="search-input" placeholder="Digite o endereço...">
+            <button class="search-btn" onclick="searchAddr()"><i class="fas fa-search"></i></button>
+        </div>
+        <div id="map-wrap"></div>
+        <div class="btn-back-home" onclick="nav('home', document.querySelectorAll('.nav-item')[0])">
+            <i class="fas fa-arrow-left"></i>
+        </div>
+        <div id="preview-card" class="preview-card">
+            <div class="prev-title">DESTINO ENCONTRADO</div>
+            <div class="prev-addr" id="prev-addr">...</div>
+            <div class="prev-stats">
+                <span class="prev-dist" id="prev-dist">0 km</span>
+                <span class="prev-val" id="prev-price">R$ 0,00</span>
+            </div>
+            <div class="btn-row">
+                <button class="btn-map-action btn-close" onclick="closePreview()">Fechar</button>
+                <button class="btn-map-action btn-google" onclick="openGoogle()">Google Maps</button>
+            </div>
+        </div>
+    </div>
 
-<div class="panel row">
-  <button class="start" onclick="iniciar()">INICIAR</button>
-  <button class="pause" onclick="pausar()">PAUSAR</button>
-  <button class="stop" onclick="encerrar()">ENCERRAR</button>
-</div>
+    <div id="screen-config" class="screen">
+        <div class="config-scroll">
+            <div class="cfg-group">
+                <div class="cfg-title">Bandeirada (R$)</div>
+                <div class="cfg-grid">
+                    <div class="cfg-box"><span class="cfg-label-small">BANDEIRA 1</span><input type="number" id="cfg-base1" class="cfg-input"></div>
+                    <div class="cfg-box"><span class="cfg-label-small">BANDEIRA 2</span><input type="number" id="cfg-base2" class="cfg-input"></div>
+                </div>
+            </div>
+            <div class="cfg-group">
+                <div class="cfg-title">Preço por KM (R$)</div>
+                <div class="cfg-grid">
+                    <div class="cfg-box"><span class="cfg-label-small">BANDEIRA 1</span><input type="number" id="cfg-km1" class="cfg-input"></div>
+                    <div class="cfg-box"><span class="cfg-label-small">BANDEIRA 2</span><input type="number" id="cfg-km2" class="cfg-input"></div>
+                </div>
+            </div>
+            <div class="cfg-group">
+                <div class="cfg-title">Preço por Minuto (R$)</div>
+                <div class="cfg-grid">
+                    <div class="cfg-box"><span class="cfg-label-small">BANDEIRA 1</span><input type="number" id="cfg-min1" class="cfg-input"></div>
+                    <div class="cfg-box"><span class="cfg-label-small">BANDEIRA 2</span><input type="number" id="cfg-min2" class="cfg-input"></div>
+                </div>
+            </div>
+            <button class="save-btn" onclick="saveData()">SALVAR E VOLTAR</button>
+        </div>
+    </div>
 
-<div class="panel config">
-<h3>Configuração</h3>
+    <div class="nav-bar">
+        <button class="nav-item active" onclick="nav('home', this)"><i class="fas fa-home"></i></button>
+        <button class="nav-item" onclick="nav('map', this)"><i class="fas fa-map-marked-alt"></i></button>
+        <button class="nav-item" onclick="nav('config', this)"><i class="fas fa-cog"></i></button>
+    </div>
 
-<label>Bandeirada (R$)</label>
-<input id="banderada" type="number" step="0.01">
-
-<label>B1 – R$/km</label>
-<input id="b1_km" type="number" step="0.01">
-
-<label>B1 – R$/min</label>
-<input id="b1_min" type="number" step="0.01">
-
-<label>B2 – R$/km</label>
-<input id="b2_km" type="number" step="0.01">
-
-<label>B2 – R$/min</label>
-<input id="b2_min" type="number" step="0.01">
-
-<label>Bandeira 2</label>
-<select id="modoB2">
-  <option value="auto">Automática (22h–6h)</option>
-  <option value="manual">Manual</option>
-</select>
-
-<button onclick="salvar()">Salvar</button>
-</div>
-
-<div class="panel">
-<h3>Destino & Prévia</h3>
-<input id="destino" placeholder="Pesquisar destino">
-<button onclick="buscar()">Buscar</button>
-<div id="map"></div>
-<div class="small">Estimativa: R$ <span id="previa">0.00</span></div>
-</div>
-
-</div>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-let cfg={
-  banderada:5,
-  b1_km:2.5,b1_min:0.5,
-  b2_km:3.5,b2_min:0.7
-};
+    /* --- LOGICA CORE --- */
+    let config = { base1: 6.00, base2: 8.00, km1: 4.00, km2: 5.20, min1: 0.50, min2: 0.80 };
+    let state = { running: false, paused: false, fare: 0, km: 0, sec: 0, flag: 1 };
+    let timer = null, watchId = null, lastPos = null, map = null, searchMarker = null, destCoords = null;
 
-let rodando=false, pausado=false;
-let inicio, ultimo;
-let dist=0, valor=0;
-let latA, lonA;
-let map, mark;
+    window.onload = () => {
+        loadData();
+        setInterval(clock, 1000);
+        initMap();
+    };
 
-function salvar(){
-  cfg={
-    banderada:+banderada.value,
-    b1_km:+b1_km.value,b1_min:+b1_min.value,
-    b2_km:+b2_km.value,b2_min:+b2_min.value
-  };
-  localStorage.setItem("cfgTaxi",JSON.stringify(cfg));
-  alert("Configuração salva");
-}
-
-(function carregar(){
-  let d=localStorage.getItem("cfgTaxi");
-  if(d)cfg=JSON.parse(d);
-  banderada.value=cfg.banderada;
-  b1_km.value=cfg.b1_km;
-  b1_min.value=cfg.b1_min;
-  b2_km.value=cfg.b2_km;
-  b2_min.value=cfg.b2_min;
-})();
-
-function bandeira(){
-  if(modoB2.value==="manual")return 2;
-  let h=new Date().getHours();
-  return(h>=22||h<6)?2:1;
-}
-
-function iniciar(){
-  if(rodando)return;
-  rodando=true; pausado=false;
-  inicio=Date.now(); ultimo=inicio;
-  valor=cfg.banderada;
-  navigator.geolocation.watchPosition(p=>{
-    if(!rodando||pausado)return;
-    let {latitude,longitude}=p.coords;
-    if(latA){
-      dist+=calc(latA,lonA,latitude,longitude);
+    function clock() {
+        const now = new Date();
+        document.getElementById('clock').innerText = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        const h = now.getHours();
+        state.flag = (h >= 20 || h < 6) ? 2 : 1;
+        document.getElementById('flag-badge').innerText = "BANDEIRA " + state.flag;
     }
-    latA=latitude; lonA=longitude;
-  });
-}
 
-function pausar(){pausado=!pausado;}
+    function nav(id, btn) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        document.getElementById('screen-'+id).classList.add('active');
+        btn.classList.add('active');
+        if(id === 'map' && map) setTimeout(()=>map.invalidateSize(), 300);
+    }
 
-function encerrar(){
-  rodando=false; pausado=false;
-  latA=null;
-  alert("Total da corrida: R$ "+valor.toFixed(2));
-}
+    /* --- CORRIDA --- */
+    function handleRide() {
+        if(!state.running) {
+            if(!navigator.geolocation) { alert("Ative o GPS!"); return; }
+            state.running = true; state.paused = false;
+            // Inicia com valor da bandeirada apenas
+            state.fare = state.flag === 1 ? config.base1 : config.base2;
+            state.km = 0; state.sec = 0; lastPos = null;
 
-setInterval(()=>{
-  if(!rodando||pausado)return;
-  let agora=Date.now();
-  let min=(agora-ultimo)/60000;
-  ultimo=agora;
+            document.getElementById('btn-main').classList.add('stop');
+            document.getElementById('btn-pause').style.display = 'block';
+            document.getElementById('pulse-ring').style.animation = 'none';
 
-  let b=bandeira();
-  bandeiraEl.textContent=b;
+            watchGPS();
+            timer = setInterval(tick, 1000);
+        } else {
+            if(confirm("Encerrar corrida?")) stopRide();
+        }
+        updateUI();
+    }
 
-  if(dist>1.5){
-    let vkm=(b==1?cfg.b1_km:cfg.b2_km)*min*0.5;
-    let vmin=(b==1?cfg.b1_min:cfg.b2_min)*min;
-    valor+=Math.max(vkm,vmin);
-  }
+    function stopRide() {
+        state.running = false;
+        clearInterval(timer);
+        navigator.geolocation.clearWatch(watchId);
+        document.getElementById('btn-main').classList.remove('stop');
+        document.getElementById('btn-pause').style.display = 'none';
+        document.getElementById('pulse-ring').style.animation = 'pulse 2s infinite';
+        alert("Valor Final: R$ " + state.fare.toFixed(2));
+    }
 
-  valorEl();
-},3000);
+    function togglePause() {
+        state.paused = !state.paused;
+        const btn = document.getElementById('btn-pause');
+        if(state.paused) { btn.innerText = "RETOMAR"; btn.classList.add('active'); } 
+        else { btn.innerText = "PAUSAR CORRIDA"; btn.classList.remove('active'); }
+    }
 
-function valorEl(){
-  valor.textContent=valor.toFixed(2);
-  distEl.textContent=dist.toFixed(2);
-  tempo.textContent=Math.floor((Date.now()-inicio)/60000);
-}
+    function tick() {
+        if(state.paused) return;
+        state.sec++;
+        calc();
+        updateUI();
+    }
 
-function calc(a,b,c,d){
-  const R=6371;
-  let dLat=(c-a)*Math.PI/180;
-  let dLon=(d-b)*Math.PI/180;
-  let x=Math.sin(dLat/2)**2+
-  Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*
-  Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
-}
+    function calc() {
+        // Base Inicial
+        let total = state.flag === 1 ? config.base1 : config.base2;
+        
+        // Preços atuais
+        const pKm = state.flag === 1 ? config.km1 : config.km2;
+        const pMin = state.flag === 1 ? config.min1 : config.min2;
 
-// MAPA
-try{
-  map=L.map('map').setView([-21.13,-44.26],13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-}catch{}
+        if (state.km > 1.1) {
+            // Se rodou mais que 1.1km: Cobra excedente de KM + Tempo TOTAL (ou proporcional)
+            // Aqui cobraremos o tempo proporcional corrido, pois saiu da franquia
+            total += (state.km - 1.1) * pKm;
+            total += (state.sec / 60) * pMin;
+        } else {
+            // Se NÃO rodou 1.1km (Franquia)
+            // Só cobra tempo se ficar parado muito tempo (Ex: > 5 min / 300s)
+            if (state.sec > 300) {
+                total += ((state.sec - 300) / 60) * pMin;
+            }
+        }
+        
+        state.fare = total;
+    }
 
-async function buscar(){
-  if(!navigator.onLine)return;
-  let q=destino.value;
-  let r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`);
-  let j=await r.json();
-  if(!j[0])return;
-  let lat=j[0].lat, lon=j[0].lon;
-  if(mark)mark.remove();
-  mark=L.marker([lat,lon]).addTo(map);
-  map.setView([lat,lon],14);
-}
+    function updateUI() {
+        document.getElementById('ui-price').innerText = state.fare.toFixed(2).replace('.', ',');
+        document.getElementById('ui-km').innerText = state.km.toFixed(1);
+        const m = Math.floor(state.sec/60).toString().padStart(2,'0');
+        const s = (state.sec%60).toString().padStart(2,'0');
+        document.getElementById('ui-time').innerText = m+":"+s;
+    }
+
+    function watchGPS() {
+        watchId = navigator.geolocation.watchPosition(pos => {
+            if(state.paused) return;
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            if(lastPos) {
+                const d = getDist(lastPos.lat, lastPos.lon, lat, lon);
+                if(d > 0.010) state.km += d;
+            }
+            lastPos = {lat, lon};
+            calc(); updateUI();
+        }, null, {enableHighAccuracy: true});
+    }
+
+    /* --- MAPA --- */
+    function initMap() {
+        map = L.map('map-wrap', {zoomControl:false}).setView([-14.2, -51.9], 4);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        if(navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(p=>{
+                map.setView([p.coords.latitude, p.coords.longitude], 15);
+                L.circle([p.coords.latitude, p.coords.longitude], {color: 'cyan', radius: 50}).addTo(map);
+                window.myLat = p.coords.latitude;
+                window.myLon = p.coords.longitude;
+            });
+        }
+    }
+
+    function searchAddr() {
+        const q = document.getElementById('map-input').value;
+        if(!q) return;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`)
+        .then(r=>r.json()).then(d=>{
+            if(d[0]) {
+                const lat = d[0].lat, lon = d[0].lon;
+                destCoords = {lat, lon};
+                map.setView([lat, lon], 15);
+                if(searchMarker) map.removeLayer(searchMarker);
+                searchMarker = L.marker([lat, lon]).addTo(map);
+
+                // Estimativa
+                const dist = getDist(window.myLat||-14, window.myLon||-51, lat, lon) * 1.3;
+                
+                // Calculo Estimado (Calculo Simplificado: Base + KM)
+                let est = (state.flag===1?config.base1:config.base2);
+                const pkm = (state.flag===1?config.km1:config.km2);
+                if(dist > 1.1) est += (dist - 1.1) * pkm;
+                
+                document.getElementById('preview-card').style.display = 'block';
+                document.getElementById('prev-addr').innerText = d[0].display_name.split(',')[0];
+                document.getElementById('prev-dist').innerText = dist.toFixed(1) + " km";
+                document.getElementById('prev-price').innerText = "R$ " + est.toFixed(2).replace('.', ',');
+            } else { alert("Não encontrado"); }
+        });
+    }
+    function closePreview() { document.getElementById('preview-card').style.display = 'none'; }
+    function openGoogle() { if(destCoords) window.open(`https://www.google.com/maps/dir/?api=1&destination=${destCoords.lat},${destCoords.lon}`, '_blank'); }
+
+    /* --- STORAGE --- */
+    function saveData() {
+        config.base1 = parseFloat(document.getElementById('cfg-base1').value);
+        config.base2 = parseFloat(document.getElementById('cfg-base2').value);
+        config.km1 = parseFloat(document.getElementById('cfg-km1').value);
+        config.km2 = parseFloat(document.getElementById('cfg-km2').value);
+        config.min1 = parseFloat(document.getElementById('cfg-min1').value);
+        config.min2 = parseFloat(document.getElementById('cfg-min2').value);
+        localStorage.setItem('neonPro_cfg', JSON.stringify(config));
+        nav('home', document.querySelectorAll('.nav-item')[0]);
+    }
+
+    function loadData() {
+        const d = localStorage.getItem('neonPro_cfg');
+        if(d) config = JSON.parse(d);
+        document.getElementById('cfg-base1').value = config.base1;
+        document.getElementById('cfg-base2').value = config.base2;
+        document.getElementById('cfg-km1').value = config.km1;
+        document.getElementById('cfg-km2').value = config.km2;
+        document.getElementById('cfg-min1').value = config.min1;
+        document.getElementById('cfg-min2').value = config.min2;
+    }
+
+    function getDist(lat1,lon1,lat2,lon2) {
+        const R = 6371; 
+        const dLat = (lat2-lat1)*Math.PI/180;
+        const dLon = (lon2-lon1)*Math.PI/180;
+        const a = Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+        return R*(2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
+    }
 </script>
-
 </body>
 </html>
